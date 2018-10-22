@@ -1,0 +1,6 @@
+fd = open ("foo.txt","r+")
+print fd.read(10)
+print fd.tell()
+fd.seek(1,0)
+print fd.read(10)
+fd.close()
