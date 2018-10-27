@@ -1,0 +1,6 @@
+{
+	"cmd": "MYSQL.exe -uroot -pzx_12221 -h106.75.227.42 < $file",
+	"file_regex": ".sql$",
+	"encoding": "utf-8",
+	"shell" : true
+}
