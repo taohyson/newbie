@@ -1,0 +1,1 @@
+db.col.find().sort({"likes":-1})

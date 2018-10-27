@@ -1,0 +1,1 @@
+redis-benchmark -n 10000  -q
