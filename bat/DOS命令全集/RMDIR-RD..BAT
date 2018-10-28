@@ -1,0 +1,5 @@
+@ECHO OFF
+
+DIR /A:D
+RMDIR /S /Q test
+DIR /A:D

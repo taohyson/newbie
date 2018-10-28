@@ -1,0 +1,2 @@
+MKDIR A
+DIR /A:D /S

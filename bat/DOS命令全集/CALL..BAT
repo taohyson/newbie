@@ -1,0 +1,19 @@
+@ECHO OFF
+
+ECHO %~0
+ECHO %~f0
+ECHO %~dp0
+ECHO %~nx0
+ECHO %~d0
+ECHO %~p0
+ECHO %~n0
+ECHO %~x0
+ECHO %~s0
+ECHO %~fatz0
+ECHO %~a0
+ECHO %~t0
+ECHO %~z0
+ECHO %~dp$PATH:0
+ECHO %~$PATH:0
+
+CALL CHECKNEW.BAT 10 20

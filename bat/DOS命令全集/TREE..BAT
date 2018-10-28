@@ -1,0 +1,3 @@
+@ECHO OFF
+
+TREE . /F /A
