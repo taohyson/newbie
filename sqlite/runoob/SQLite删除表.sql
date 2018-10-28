@@ -1,0 +1,3 @@
+.tables
+DROP TABLE IF EXISTS COMPANY;
+.tables

@@ -1,0 +1,35 @@
+-- INSERT INTO DEPARTMENT (ID, DEPT, EMP_ID)
+-- VALUES (1,
+--         'IT Billing',
+--         1);
+
+ -- INSERT INTO DEPARTMENT (ID, DEPT, EMP_ID)
+-- VALUES (2,
+--         'Engineering',
+--         2);
+
+ -- INSERT INTO DEPARTMENT (ID, DEPT, EMP_ID)
+-- VALUES (3,
+--         'Finance',
+--         7);
+
+.header ON
+.mode column
+
+SELECT EMP_ID,
+       NAME,
+       DEPT
+FROM COMPANY
+CROSS JOIN DEPARTMENT;
+
+SELECT EMP_ID,
+       NAME,
+       DEPT
+FROM COMPANY
+INNER JOIN DEPARTMENT ON COMPANY.ID = DEPARTMENT.EMP_ID;
+
+SELECT EMP_ID,
+       NAME,
+       DEPT
+FROM COMPANY
+LEFT OUTER JOIN DEPARTMENT ON COMPANY.ID = DEPARTMENT.EMP_ID;

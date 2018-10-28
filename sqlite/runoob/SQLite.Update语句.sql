@@ -1,0 +1,14 @@
+.header on
+.mode column
+
+SELECT *
+FROM COMPANY;
+
+
+UPDATE COMPANY
+SET SALARY = SALARY + 5000.0
+WHERE ADDRESS = 'Texas';
+
+
+SELECT *
+FROM COMPANY;

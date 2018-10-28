@@ -1,0 +1,10 @@
+.header on
+.mode column
+
+SELECT C.ID AS COMPANY_ID,
+       C.NAME AS COMPANY_NAME,
+       C.AGE,
+       D.DEPT
+FROM COMPANY AS C,
+     DEPARTMENT AS D
+WHERE C.ID = D.EMP_ID;
