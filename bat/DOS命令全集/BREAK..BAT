@@ -1,0 +1,6 @@
+ECHO 1
+
+BREAK ON
+PAUSE
+
+ECHO 2

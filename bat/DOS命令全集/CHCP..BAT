@@ -1,0 +1,3 @@
+@ECHO OFF
+
+CHCP 437
