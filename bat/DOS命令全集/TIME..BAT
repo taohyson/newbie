@@ -1,0 +1,4 @@
+@ECHO OFF
+
+TIME /T
+TIME 15:32
