@@ -1,0 +1,6 @@
+@ECHO OFF
+
+IPCONFIG /ALL
+IPCONFIG /DISPLAYDNS
+rem IPCONFIG /showclassid
+rem IPCONFIG /showclassid6

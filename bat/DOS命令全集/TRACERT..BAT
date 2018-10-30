@@ -1,0 +1,3 @@
+@ECHO OFF
+
+TRACERT -d -h 100 188.2.4.224

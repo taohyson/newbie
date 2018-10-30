@@ -1,0 +1,3 @@
+@ECHO OFF
+
+ROUTE -P PRINT
