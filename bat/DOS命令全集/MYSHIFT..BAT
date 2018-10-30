@@ -1,0 +1,7 @@
+@ECHO OFF
+
+ECHO %1
+SHIFT /1
+ECHO %1
+SHIFT /1
+ECHO %1
