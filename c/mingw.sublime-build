@@ -1,6 +1,1 @@
-{
-	"cmd":["cmd /c gcc -g -Wall $file -o ${file/\\.c/\\.exe/}", "&&", "cmd /c ${file/\\.c/\\.exe/}"],
-	"file_regex": ".c$",
-	"encoding": "gbk",
-	"shell":"true"
-}
+C:/Users/Administrator/AppData/Roaming/Sublime Text 3/Packages/User/mingw.sublime-build
