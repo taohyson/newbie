@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>向 CGI 程序传递单选按钮数据</title>
+</head>
+<body>
+	<form action="http://106.75.227.42:10000/radiobutton.cgi" 
+	         method="post" 
+	         target="_blank">
+	<input type="radio" name="subject" value="maths" 
+	                                    checked="checked"/> 数学 
+	<input type="radio" name="subject" value="physics" /> 物理
+	<input type="submit" value="选择学科" />
+	</form>
+</body>
+</html>
