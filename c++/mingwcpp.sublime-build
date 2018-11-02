@@ -1,0 +1,6 @@
+{
+	"cmd":["cmd /c g++ -g -Wall $file -o ${file/\\.cpp/\\.exe/}", "&&", "cmd /c ${file/\\.cpp/\\.exe/}"],
+	"file_regex": ".cpp$",
+	"encoding": "gbk",
+	"shell":"true"
+}
