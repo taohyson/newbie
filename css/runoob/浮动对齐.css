@@ -1,0 +1,9 @@
+.align
+{
+	float: right;
+	width: 300px;
+	border-style: solid;
+	border-width: 3px;
+	border-color: #73AD21;
+	padding: 10px;
+}

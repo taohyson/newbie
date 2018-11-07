@@ -1,0 +1,9 @@
+.align
+{
+	line-height: 200px;
+	height: 200px;
+	border-style: solid;
+	border-width: 3px;
+	border-color: #73ad21;
+	text-align: center;
+}

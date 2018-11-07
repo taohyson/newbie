@@ -1,0 +1,19 @@
+@media screen
+{
+	p{
+		font-family: verdana, sans-serif;
+		font-size: 14px;
+	}
+}
+@media print
+{
+	p{
+		font-family: times, serif;
+		font-size: 10px;
+	}
+}
+@media screen, print {
+	p{
+		font-weight: bold;
+	}
+}

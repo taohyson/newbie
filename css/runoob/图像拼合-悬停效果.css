@@ -1,0 +1,42 @@
+ul{position:relative;}
+ul li{margin:0;padding:0;list-style:none;position:absolute;top:0;}
+ul li, ul li a{height:44px;display:block;}
+.home
+{
+	background-image: url(http://www.runoob.com/images/img_navsprites.gif);
+	background-position: 0 0;
+	left: 0px;
+	width: 46px;
+	height: 44px;
+}
+.prev
+{
+	background-image: url(http://www.runoob.com/images/img_navsprites.gif);
+	background-position: -47px 0;
+	left: 63px;
+	width: 43px;
+	height: 44px;
+}
+.next
+{
+	background-image: url(http://www.runoob.com/images/img_navsprites.gif);
+	background-position: -91px 0;
+	left: 129px;
+	width: 43px;
+	height: 44px;
+}
+.home:hover
+{
+	background-image: url(http://www.runoob.com/images/img_navsprites_hover.gif);
+	background-position: 0 -45px;
+}
+.prev:hover
+{
+	background-image: url(http://www.runoob.com/images/img_navsprites_hover.gif);
+	background-position: -47px -45px;
+}
+.next:hover
+{
+	background-image: url(http://www.runoob.com/images/img_navsprites_hover.gif);
+	background-position: -91px -45px;
+}
