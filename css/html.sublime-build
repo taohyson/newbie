@@ -1,6 +1,0 @@
-{
-	"cmd":"chrome $file",
-	"file_regex": ".html$",
-	"encoding": "utf-8",
-	"shell":"true"
-}
