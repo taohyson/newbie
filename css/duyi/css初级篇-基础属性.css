@@ -1,0 +1,64 @@
+*{
+	margin: 0px;
+	padding: 0px;
+	font-family: cursive;
+	font-size: 60px;
+}
+
+.propfont{
+	font-size: 20px;
+	font-size: 60px;
+	font-weight: 100;
+	font-weight: 900;
+	font-weight: lighter;
+	font-weight: normal;
+	font-weight: bolder;
+	font-weight: bold;
+	font-style: italic;
+	font-style: normal;
+	font-family: arial;
+	font-family: cursive;
+}
+
+.propcolor{
+	color: red;
+	color: #f40;
+	color: rgb(255, 68, 0);
+	color: rgba(255, 68, 0, 0.5);
+}
+
+.propbordercolor{
+	overflow: hidden;
+	width: 0px;
+	height: 0px;
+	border: 100px solid black;
+	border-left-color: red;
+	border-left-color: transparent;
+	border-top-color: yellow;
+	border-top-color: transparent;
+	border-right-color: green;
+	border-bottom-color: purple;
+	border-radius: 50%;
+	border-radius: 10px;
+}
+
+.proptext{
+	border: 1px solid black;
+	height: 200px;	
+	line-height: 200px;
+	text-align: right;
+	text-align: center;
+	text-align: left;
+	text-indent: 2em;
+	text-decoration: overline;
+	text-decoration: underline;
+	text-decoration: none;
+	text-decoration: line-through;
+}
+
+.propcursor{
+	cursor: help;
+	cursor: none;
+	cursor: wait;
+	cursor: default;
+}

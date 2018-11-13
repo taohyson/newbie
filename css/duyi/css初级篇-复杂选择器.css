@@ -25,6 +25,9 @@ div .childclass#childid{
 }
 
 
+.group-selector1,.group-selector2,.group-selector3{
+	background-color: #329;
+}
 
 section div ul li a em{
 	background-color: black;
