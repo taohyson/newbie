@@ -1,0 +1,34 @@
+.nested .inside{
+	background-color: #400;
+	color: black;
+}
+
+.dad>.son{
+	background-color: #f40;
+	color: black;
+}
+
+div.doubleparent{
+	color: orange;
+	background-color: red;
+}
+div#doubleparent2{
+	color:red;
+	background-color: orange
+}
+
+#parentid p{
+	background-color: green;
+}
+div .childclass#childid{
+	background-color: red;
+}
+
+
+
+section div ul li a em{
+	background-color: black;
+	color: red;
+	font-style: normal;
+	text-decoration: none;
+}

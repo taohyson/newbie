@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>css初级篇-选择器</title>
+	<style>
+		.inner{
+			width: 100px;
+			height: 100px;
+			background-color: green;
+		}
+	</style>
+	<link rel="stylesheet" href="css初级篇-选择器.css">
+</head>
+<body>
+	<h4>行间样式</h4>
+	<div id="inline" style="
+	     width: 100px;
+	     height: 100px;
+	     background-color: red;
+	"></div>
+
+	<h4>内部样式/页面级css</h4>
+	<div class="inner"></div>
+
+	<h4>外部样式/外部css文件</h4>
+	<div class="outer"></div>
+
+	<div id="id-selector"></div>
+	<div class="class-selector"></div>
+	<div></div>
+	<span>通配符选择器</span>
+
+	<div style="
+		width: 100px;
+		height: 100px;
+		background-color: silver;
+		border: 0px solid white;
+	" id="id-selector" class="inner class-selector" prop="prop-selector"></div>
+</body>
+</html>

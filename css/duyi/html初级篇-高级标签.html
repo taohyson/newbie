@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>html初级篇-高级标签</title>
+	<link rel="stylesheet" href="html初级篇-高级标签.css">
+</head>
+<body>
+	
+	<p><strong><em>举个嵌套例子</em></strong></p>
+
+	<div style="width: 100px; height: 100px; background-color: red;">werwdsafwefsfdddddddddddddddddddsawfw</div>
+
+	<div style="width: 100px; height: 100px; background-color: green;">空格文本空格文本空格文本空格文本空格文本空格文本</div>
+
+	<div style="width: 100px; height: 100px; background-color: yellow;">空格分隔符（换行=空格）                 空格&nbsp;分隔符</div>
+
+	<div style="width: 100px; height: 100px; background-color: gray;">特殊转义字符&lt;&gt;</div>
+
+	a<br>b
+	<hr>
+
+	你们喜欢的电影
+	<!-- <ol> -->
+	<!-- <ol type="1"> -->
+	<!-- <ol type="a"> -->
+	<!-- <ol type="A"> -->
+	<!-- <ol type="i"> -->
+	<ol type="I">
+		<li>marvel</li>
+		<li>速8</li>
+		<li>返老还童</li>
+	</ol>
+
+	常见水果<br><br><br>
+	<ul type="circle">
+		<li>草莓</li>
+		<li>苹果</li>
+		<li>橛子</li>
+	</ul>
+
+	<img src="https://ss0.baidu.com/6ONWsjip0QIZ8tyhnq/it/u=898591107,2663628550&fm=173&app=25&f=JPEG?w=218&h=146&s=7A62CC4FD45225DC0160813203008090" alt="my" width="100px">
+	<img src="my.jpg" alt="my" width="100px">
+	
+	<a href="https://www.baidu.com">淘宝</a>
+
+	<form action="" method="get">
+		用户名：<input type="text" name="username" value="请输入用户名" style="color: #999" onfocus="if(this.value=='请输入用户名'){this.value='';this.style.color='#424242';}" onblur="if(this.value==''){this.value='请输入用户名';this.style.color='#999';}">
+		<br>
+		密码：<input type="password" name="password">
+		<br>
+		<input type="radio" name="stars" value="贝克汉姆" checked="checked">1.贝克汉姆
+		<input type="radio" name="stars" value="莱昂纳多">2.莱昂纳多
+		<input type="radio" name="stars" value="周星驰">3.周星驰
+		<br>
+		<input type="checkbox" name="fruits" value="苹果" checked="checked">1.苹果
+		<input type="checkbox" name="fruits" value="橛子">2.橛子
+		<input type="checkbox" name="fruits" value="香蕉">3.香蕉
+		<br>
+		<select name="city" id="city">
+			<option value="北京">北京</option>
+			<option value="上海">上海</option>
+			<option value="天津">天津</option>
+		</select>
+		<br>
+		<input type="submit">
+	</form>
+
+</body>
+</html>
