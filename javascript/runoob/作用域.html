@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>作用域</title>
+	<script type="text/javascript">
+		var globalvar = 1;
+		function func(argument) {
+			// body...
+			var localvar = 2;
+			console.info(func.name, Date(), "INFO", window.globalvar);
+			window.globalvar = 2;
+			console.log(func.name, Date(), "LOG", window.globalvar);
+		}
+	</script>
+</head>
+<body>
+	<script type="text/javascript">
+		func();
+	</script>
+
+	<p>作用域</p>
+</body>
+</html>

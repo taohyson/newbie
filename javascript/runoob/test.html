@@ -1,0 +1,27 @@
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>log4javascript 测试</title>
+<meta http-equiv="content-type" content="text/html; charset=gb2312" />
+<script src="./log4javascript.js" language="javascript"></script>
+<script language="javascript">
+<!--
+function mytest()
+{
+ var logger = log4javascript.getLogger('test');
+ alert(log4javascript.isEnabled());
+ var popUpAppender = new log4javascript.PopUpAppender();
+ logger.addAppender(popUpAppender);
+ logger.debug('你好啊，log4jjavascript!');
+ logger.info('你好啊，log4jjavascript!');
+ logger.warn('你好啊，log4jjavascript!');
+ logger.error('你好啊，log4jjavascript!');
+ logger.fatal('你好啊，log4jjavascript!');
+}
+-->
+</script>
+</head>
+<body>
+<br>
+<input type="button" value="测 试" onclick="mytest();" />
+</body>
+</html>

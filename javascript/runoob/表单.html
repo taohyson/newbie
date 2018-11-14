@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>表单</title>
+	<script type="text/javascript" src="表单.js"></script>
+</head>
+<body>
+	<form name="myForm" action="http://www.runoob.com/try/demo_source/demo_form.php" method="post" onsubmit="return validateForm()">
+		firstName:<input type="text" name="fname">
+		<input type="submit" name="submit">
+	</form>
+
+	<input type="number" name="digit" min="1" max="10" required="required">
+
+	<form action="http://www.runoob.com/try/demo_source/demo_form.php" method="post">
+		<input type="text" name="fname" required="required">
+		<input type="submit" value="提交">
+	</form>
+</body>
+</html>

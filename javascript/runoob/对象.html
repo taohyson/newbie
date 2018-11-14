@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>对象</title>
+</head>
+<body>
+	<script type="text/javascript">
+		var person = {
+			firstName : 'John',
+			lastName : 'Geo',
+			age : 20,
+			fullname : function()
+			{
+				return this.firstName + ' ' + this.lastName;
+			}
+		}
+		function onShowClick() {
+			console.info(onShowClick.name, Date(), "INFO", document.getElementById('dot').innerHTML);
+			console.info(onShowClick.name, Date(), "INFO", document.getElementById('bracket').innerHTML);
+			document.getElementById('dot').innerHTML = person.fullname();
+			document.getElementById('bracket').innerHTML = person.fullname();
+		}
+	</script>
+
+	<p id="dot"></p>
+	<p id="bracket"></p>
+	<button type="button" onclick="onShowClick()">对象</button>
+</body>
+</html>

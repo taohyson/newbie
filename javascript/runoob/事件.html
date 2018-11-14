@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>事件</title>
+	<script type="text/javascript">
+		function onDateClick(argument) {
+			document.getElementById('date').innerHTML = Date();
+		}
+	</script>
+</head>
+<body>
+	<p id="demo"></p>
+	<button onclick="document.getElementById('demo').innerHTML=Date()">事件</button>
+	<br>
+	<button onclick="this.innerHTML=Date()">事件</button>
+	<p id="date"></p>
+	<button onclick="onDateClick()">事件</button>
+</body>
+</html>

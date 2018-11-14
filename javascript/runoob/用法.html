@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>用法</title>
+
+	<script type="text/javascript">
+		function onButtonClick(argument) {
+			document.getElementById('demo').innerHTML = '用法';
+		}
+	</script>
+
+	<script type="text/javascript" src="外部的JavaScript.js"></script>
+</head>
+<body>
+	<script type="text/javascript">
+		alert("用法");
+	</script>
+
+	<script type="text/javascript">
+		document.write("<h1>用法</h1>");
+		document.write("<p>用法</p>");
+	</script>
+
+	<script type="text/javascript">
+		function onButtonClick2(argument) {
+			document.getElementById('demo2').innerHTML = '用法';
+		}
+	</script>
+
+	<p id="demo">Hello</p>
+	<button type="button" onclick="onButtonClick()">Hello</button>
+	
+	<p id="demo2">World</p>
+	<button type="button" onclick="onButtonClick2()">World</button>
+
+	<p id="demo3">Runoob</p>
+	<button type="button" onclick="onButtonClick3()">Runoob</button>
+</body>
+</html>
