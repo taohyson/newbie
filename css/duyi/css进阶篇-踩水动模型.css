@@ -1,0 +1,51 @@
+*{
+	margin: 0;
+	padding: 0;
+}
+
+.single{
+	width: 100px;
+	height: 100px;
+	background-color: red;
+	float: right;
+}
+
+.leftside{
+	width: 100px;
+	height: 100px;
+	background-color: blue;
+	opacity: 0.5;
+	float: left;
+}
+.middleside{
+	height: 100px;
+	background-color: black;
+	float: none;
+	margin-left: 100px;
+	margin-right: 100px;
+}
+.rightside{
+	width: 100px;
+	height: 100px;
+	background-color: orange;
+	opacity: 0.5;
+	float: right;
+}
+
+.nested{
+	width: 300px;
+	border: 1px solid black;
+}
+
+.inside{
+	width: 100px;
+	height: 100px;
+	background-color: green;
+	opacity: 0.5;
+	float: right;
+}
+.nested:after{
+	content: "";
+	display: block;
+	clear: both;
+}

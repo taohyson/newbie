@@ -1,0 +1,82 @@
+*{
+	margin: 0px;
+	padding: 0px;
+}
+
+.single::before{
+	content: "";
+	position: absolute;
+	right: 0px;
+	top: 0px;
+	display: inline-block;
+	width: 100px;
+	height: 100px;
+	background-color: red;
+}
+.single::after{
+	content: "，的确是这样！";
+}
+
+.nested{
+	border: 1px solid black;
+}
+.inside{
+	float: left;
+	width: 100px;
+	height: 100px;
+	background-color: red;
+	color: #fff;
+}
+/*.clear{
+	clear: both;
+}*/
+.nested::after{
+	content: "";
+	display: block;
+	clear: both;
+}
+
+.floated{
+	float: left;
+	width: 100px;
+}
+
+.unfloated{
+	text-indent: 2em;
+	float: none;
+}
+
+
+
+
+.array{
+	clear: both;
+	list-style: none;
+}
+.array .item{
+	margin: 0px 10px;
+	float: left;
+}
+.array::after{
+	display: block;
+	content: "";
+	clear: both;
+}
+.array .item a{
+	color: #f40;
+	font-family: arial;
+	font-size: 15px;
+	font-weight: bold;
+	text-decoration: none;
+	line-height: 30px;
+	display: inline-block;
+	height: 30px;
+	padding: 0 5px;
+	border-radius: 15px;
+}
+.array .item a:hover{
+	text-decoration: underline;
+	background-color: #f40;
+	color: white;
+	font-weight: bold;
+}

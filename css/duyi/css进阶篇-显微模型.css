@@ -1,0 +1,27 @@
+*{
+	margin: 0;
+	padding: 0;
+}
+
+.single-inline{
+	display: inline;
+	background-color: green;
+}
+
+.single-block{
+	display: block;
+	height: 100px;
+	width: 100px;
+	background-color: red;
+}
+
+.single-inline-block{
+	display: inline-block;
+	width: 100px;
+	height: 100px;
+}
+
+.inline-block*{
+	width: 100px;
+	height: 100px;
+}

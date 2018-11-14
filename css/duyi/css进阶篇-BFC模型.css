@@ -1,0 +1,48 @@
+*{
+	margin: 0;
+	padding: 0;
+}
+
+.balded{
+	width: 100px;
+	height: 100px;
+	margin-top: 150px;
+	background-color: red;
+	/*float: left;*//*漂移*/
+	/*position: absolute; fixed;*//*移动*/
+	/*overflow: hidden; scroll;*//*裁剪*/
+	display: inline-block;/*重构*/
+}
+.inside{
+	width: 50px;
+	height: 50px;
+	background-color: green;
+	margin-top: 50px;
+	/*margin-top: 100px;*/
+	/*margin-top: 150px;*/
+	/*margin-top: 200px;*/
+}
+
+.leftside{
+	color: red;
+	margin-right : 100px;
+}
+
+.rightside{
+	color: green;
+	margin-left: 100px;
+}
+
+.upside{
+	width: 100px;
+	height: 100px;
+	background-color: yellow;
+	margin-bottom: 100px;
+}
+
+.downside{
+	width: 100px;
+	height: 100px;
+	background-color: blue;
+	margin-top: 100px;
+}
