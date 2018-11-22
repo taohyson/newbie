@@ -1,7 +1,7 @@
 @ECHO OFF
 CD /D %~dp1
 IF EXIST target (
-	DEL /Q /S target\*
+	DEL /Q /S target\* > nul
 	RMDIR /S /Q target
 )
 SETLOCAL ENABLEDELAYEDEXPANSION
