@@ -10,5 +10,7 @@ FOR %%I IN (*.java) DO (
 	SET "FILES=!FILES! %%I"
 )
 javac -d target -encoding UTF-8 %FILES%
-ECHO target\%~f1
-IF EXIST target\%~f1.class (java target\%~f1)
+IF EXIST target\%~n1.class (
+	cd target
+	java %~n1
+)
