@@ -1,0 +1,5 @@
+@ECHO OFF
+
+TYPE < NUL
+ECHO > NUL
+ECHO 2> NUL
