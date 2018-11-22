@@ -6,7 +6,7 @@ IF EXIST target (
 )
 SETLOCAL ENABLEDELAYEDEXPANSION
 SET FILES=
-FOR %%I IN (*.java) DO (
+FOR /R %%I IN (*.java) DO (
 	SET "FILES=!FILES! %%I"
 )
 javac -d target -encoding UTF-8 %FILES%
