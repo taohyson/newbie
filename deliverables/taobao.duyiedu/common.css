@@ -1,0 +1,53 @@
+@font-face{
+	font-family:global-iconfont;
+	src:url(https://at.alicdn.com/t/font_1404888168_2057645.eot);
+	src:url(https://at.alicdn.com/t/font_1404888168_2057645.eot?#iefix) format("embedded-opentype"),url(https://at.alicdn.com/t/font_1404888168_2057645.woff) format("woff"),url(https://at.alicdn.com/t/font_1404888168_2057645.ttf) format("truetype"),url(https://at.alicdn.com/t/font_1404888168_2057645.svg#uxiconfont) format("svg")
+}
+@font-face{
+	font-family:iconfont;
+	src:url(https://at.alicdn.com/t/font_403341_n8tj33yn5peng66r.eot);
+	src:url(https://at.alicdn.com/t/font_403341_n8tj33yn5peng66r.eot?#iefix) format('embedded-opentype'),url(https://at.alicdn.com/t/font_403341_n8tj33yn5peng66r.woff) format('woff'),url(https://at.alicdn.com/t/font_403341_n8tj33yn5peng66r.ttf) format('truetype'),url(https://at.alicdn.com/t/font_403341_n8tj33yn5peng66r.svg#iconfont) format('svg')
+}
+.global-iconfont{
+	font-family: global-iconfont;
+	font-size: 12px;
+	font-style: normal;
+}
+.iconfont{
+	font-family: iconfont;
+	font-size: 14px;
+	font-style: normal;
+}
+.iconfont16{
+	font-family: iconfont;
+	font-size: 16px;
+	font-style: normal;
+}
+*{
+	margin: 0px;
+	padding: 0px;
+	font: 12px/1.5 tahoma,arial,'Hiragino Sans GB','\5b8b\4f53',sans-serif;
+	border: none;
+	outline: none;
+}
+html, body{
+	overflow-x: hidden;
+}
+	body{
+		color: #3C3C3C;
+	    -webkit-font-smoothing: antialiased;
+	    background-color: #f4f4f4;
+	    overflow: hidden;
+	}
+div{
+}
+a{
+	color: #3C3C3C;
+	text-decoration: none;
+}
+a:hover{
+	color: #f40;
+}
+ol, ul{
+	list-style: none;
+}
