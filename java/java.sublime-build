@@ -1,1 +1,6 @@
-C:/Users/Administrator/AppData/Roaming/Sublime Text 3/Packages/User/java.sublime-build
+{
+	"cmd":"javarun $file",
+	"file_regex": ".java$",
+	"encoding": "gbk",
+	"shell":"true"
+}

@@ -1,0 +1,7 @@
+@ECHO OFF
+
+SET T1=%DATE:~0,10%.%TIME:~0,8%.TXT
+SET T2=%T1:/=.%
+SET T3=%T2: =0%
+SET T4=%T3::=.%
+ECHO %T4%
