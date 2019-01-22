@@ -2263,4 +2263,847 @@
     }
     return false
   }
-                                 
+  function simpleNormalizeChildren (children) {
+    for (var i = 0; i < children.length; i++) {
+      if (Array.isArray(children[i])) {
+        return Array.prototype.concat.apply([], children)
+      }
+    }
+    return children
+  }
+  
+  
+  
+  
+  
+  function normalizeChildren (children) {
+    return isPrimitive(children)
+      ? [createTextVNode(children)]
+      : Array.isArray(children)
+        ? normalizeArrayChildren(children)
+        : undefined
+  }
+  
+  function isTextNode (node) {
+    return isDef(node) && isDef(node.text) && isFalse(node.isComment)
+  }
+  
+  function normalizeArrayChildren (children, nestedIndex) {
+    var res = [];
+    var i, c, lastIndex, last;
+    for (i = 0; i < children.length; i++) {
+      c = children[i];
+      if (isUndef(c) || typeof c === 'boolean') { continue }
+      lastIndex  = res.length - 1;
+      last = res[lastIndex];
+      
+      if (Array.isArray(c)) {
+        if (c.length > 0) {
+          c = normalizeArrayChildren(c, ((nestedIndex || '') + "_" + i));
+          
+          if (isTextNode(c[0]) && isTextNode(last)) {
+            res[lastIndex] = createTextVNode(last.text + (c[0]).text);
+            c.shift();
+          }
+          res.push.apply(res, c);
+        }
+      } else if (isPrimitive(c)) {
+        if (isTextNode(last)) {
+        
+        
+        
+          res[lastIndex] = createTextVNode(last.text + c);
+        } else if (c !== '') {
+        
+          res.push(createTextVNode(c));
+        }
+      } else {
+        if (isTextNode(c) && isTextNode(last)) {
+                
+          res[lastIndex] = createTextVNode(last.text + c.text);
+        } else {
+        
+          if (isTrue(children._isVList) &&
+            isDef(c.tag) &&
+            isUndef(c.key) &&
+            isDef(nestedIndex)) {
+            c.key = "__vlist" + nestedIndex + "_" + i + "__";
+          }
+          res.push(c);
+        }
+      }
+    }
+    return res
+  }
+  
+  
+  
+  function ensureCtor (comp, base) {
+    if (
+      comp.__esModule ||
+      (hasSymbol && comp[Symbol.toStringTag] === 'Module')
+    ) {
+      comp = comp.default;
+    }
+    return isObject(comp)
+      ? base.extend(comp)
+      : comp
+  }
+  
+  function createAsyncPlaceholder (
+    factory,
+    data,
+    context,
+    children,
+    tag
+  ) {
+    var node = createEmptyVNode();
+    node.asyncFactory = factory;
+    node.asyncMeta = { data: data, context: context, children: children, tag: tag };
+    return node
+  }
+  
+  function resolveAsyncComponent (
+    factory,
+    baseCtor,
+    context
+  ) {
+    if (isTrue(factory.error) && isDef(factory.errorComp)) {
+      return factory.errorComp
+    }
+    
+    if (isDef(factory.resolved)) {
+      return factory.resolved
+    }
+    
+    if (isTrue(factory.loading) && isDef(factory.loadingComp)) {
+      return factory.loadingComp
+    }
+    
+    if (isDef(factory.contexts)) {
+    
+      factory.contexts.push(context);
+    } else {
+      var contexts = factory.contexts = [context];
+      var sync = true;
+      
+      var forceRender = function (renderCompleted) {
+        for (var i = 0, l = contexts.length; i < l; i++) {
+          contexts[i].$forceUpdate();
+        }
+        
+        if (renderCompleted) {
+          contexts.length = 0;
+        }
+      };
+      
+      var resolve = once(function (res) {
+        
+        factory.resolved = ensureCtor(res, baseCtor);
+        
+        
+        if (!sync) {
+          forceRender(true);
+        } else {
+          contexts.length = 0;
+        }
+      });
+      
+      var reject = once(function (reason) {
+        warn(
+          "Failed to resolve async component: " + (String(factory)) +
+          (reason ? ("\nReason: " + reason) : '')
+        );
+        if (isDef(factory.errorComp)) {
+          factory.error = true;
+          forceRender(true);
+        }
+      });
+      
+      var res = factory(resolve, reject);
+      
+      if (isObject(res)) {
+        if (isPromise(res)) {
+          
+          if (isUndef(factory.resolved)) {
+            res.then(resolve, reject);
+          }
+        } else if (isPromise(res.component)) {
+          res.component.then(resolve, reject);
+          
+          if (isDef(res.error)) {
+            factory.errorComp = ensureCtor(res.error, baseCtor);
+          }
+          
+          if (isDef(res.loading)) {
+            factory.loadingComp = ensureCtor(res.loading, baseCtor);
+            if (res.delay === 0) {
+              factory.loading = true;
+            } else {
+              setTimeout(function () {
+                if (isUndef(factory.resolved) && isUndef(factory.error)) {
+                  factory.loading = true;
+                  forceRender(false);
+                }
+              }, res.delay || 200);
+            }
+          }
+          
+          if (isDef(res.timeout)) {
+            setTimeout(function () {
+              if (isUndef(factory.resolved)) {
+                reject(
+                  "timeout (" + (res.timeout) + "ms)"
+                );
+              }
+            }, res.timeout);
+          }
+        }
+      }
+      
+      sync = false;
+      
+      return factory.loading
+        ? factory.loadingComp
+        : factory.resolved
+    }
+  }
+  
+  
+  
+  function isAsyncPlaceholder (node) {
+    return node.isComment && node.asyncFactory
+  }
+  
+  
+  
+  function getFirstComponentChild (children) {
+    if (Array.isArray(children)) {
+      for (var i = 0; i < children.length; i++) {
+        var c = children[i];
+        if (isDef(c) && (isDef(c.componentOptions) || isAsyncPlaceholder(c))) {
+          return c
+        }
+      }
+    }
+  }
+  
+  
+  
+  
+  
+  function initEvents (vm) {
+    vm._events = Object.create(null);
+    vm._hasHookEvent = false;
+    
+    var listeners = vm.$options._parentListeners;
+    if (listeners) {
+      updateComponentListeners(vm, listeners);
+    }
+  }
+  
+  var target;
+  
+  function add (event, fn) {
+    target.$on(event, fn);
+  }
+  
+  function remove$1 (event, fn) {
+    target.$off(event, fn);
+  }
+  
+  function createOnceHandler (event, fn) {
+    var _target = target;
+    return function onceHandler () {
+      var res = fn.apply(null, arguments);
+      if (res !== null) {
+        _target.$off(event, onceHandler);
+      }
+    }
+  }
+  
+  function updateComponentListeners (
+    vm,
+    listeners,
+    oldListeners
+  ) {
+    target = vm;
+    updateListeners(listeners, oldListeners || {}, add, remove$1, createOnceHandler, vm);
+    target = undefined;
+  }
+  
+  function eventsMixin (Vue) {
+    var hookRE = /^hook:/;
+    Vue.prototype.$on = function (event, fn) {
+      var vm = this;
+      if (Array.isArray(event)) {
+        for (var i = 0, l = event.length; i < l; i++) {
+          vm.$on(event[i], fn);
+        }
+      } else {
+        (vm._events[event] || (vm._events[event] = [])).push(fn);
+        
+        
+        if (hookRE.test(event)) {
+          vm._hasHookEvent = true;
+        }
+      }
+      return vm
+    };
+    
+    Vue.prototype.$once = function (event, fn) {
+      var vm = this;
+      function on () {
+        vm.$off(event, on);
+        fn.apply(vm, arguments);
+      }
+      on.fn = fn;
+      vm.$on(event, on);
+      return vm
+    };
+    
+    Vue.prototype.$off = function (event, fn) {
+      var vm = this;
+      
+      if (!arguments.length) {
+        vm._events = Object.create(null);
+        return vm
+      }
+      
+      if (Array.isArray(event)) {
+        for (var i$1 = 0, l = event.length; i$1 < l; i$1++) {
+          vm.$off(event[i$1], fn);
+        }
+        return vm
+      }
+      
+      var cbs = vm._events[event];
+      if (!cbs) {
+        return vm
+      }
+      if (!fn) {
+        vm._events[event] = null;
+        return vm
+      }
+      
+      var cb;
+      var i = cbs.length;
+      while (i--) {
+        cb = cbs[i];
+        if (cb === fn || cb.fn === fn) {
+          cbs.splice(i, 1);
+          break
+        }
+      }
+      return vm
+    };
+    
+    Vue.prototype.$emit = function (event) {
+      var vm = this;
+      {
+        var lowerCaseEvent = event.toLowerCase();
+        if (lowerCaseEvent !== event && vm._events[lowerCaseEvent]) {
+          tip(
+            "Event \"" + lowerCaseEvent + "\" is emitted in component " +
+            (formatComponentName(vm)) + " but the handler is registered for \"" + event + "\". " +
+            "Note that HTML attributes are case-insensitive and you cannot use " +
+            "v-on to listen to camelCase events when using in-DOM templates. " +
+            "You should probably use \"" + (hyphenate(event)) + "\" instead of \"" + event + "\"."
+          );
+        }
+      }
+      var cbs = vm._events[event];
+      if (cbs) {
+        cbs = cbs.length > 1 ? toArray(cbs) : cbs;
+        var args = toArray(arguments, 1);
+        var info = "event handler for \"" + event + "\"";
+        for (var i = 0, l = cbs.length; i < l; i++) {
+          invokeWithErrorHandling(cbs[i], vm, args, vm, info);
+        }
+      }
+      return vm
+    };
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  function resolveSlots (
+    children,
+    context
+  ) {
+    if (!children || !children.length) {
+      return {}
+    }
+    var slots = {};
+    for (var i = 0, l = children.length; i < l; i++) {
+      var child = children[i];
+      var data = child.data;
+      
+      if (data && data.attrs && data.attrs.slot) {
+        delete data.attrs.slot;
+      }
+      
+      
+      if ((child.context === context || child.fnContext === context) &&
+        data && data.slot != null
+      ) {
+        var name = data.slot;
+        var slot = (slots[name] || (slots[name] = []));
+        if (child.tag === 'template') {
+          slot.push.apply(slot, child.children || []);
+        } else {
+          slot.push(child);
+        }
+      } else {
+        (slots.default || (slots.default = [])).push(child);
+      }
+    }
+    
+    for (var name$1 in slots) {
+      if (slots[name$1].every(isWhitespace)) {
+        delete slots[name$1];
+      }
+    }
+    return slots
+  }
+  
+  function isWhitespace (node) {
+    return (node.isComment && !node.asyncFactory) || node.text === ' '
+  }
+  
+  function resolveScopedSlots (
+    fns, // see flow/vnode
+    res
+  ) {
+    res = res || {};
+    for (var i = 0; i < fns.length; i++) {
+      var slot = fns[i];
+      if (Array.isArray(slot)) {
+        resolveScopedSlots(slot, res);
+      } else {
+        res[slot.key] = slot.fn;
+      }
+    }
+    return res
+  }
+  
+  
+  
+  var activeInstance = null;
+  var isUpdatingChildComponent = false;
+  
+  function setActiveInstance(vm) {
+    var prevActiveInstance = activeInstance;
+    activeInstance = vm;
+    return function () {
+      activeInstance = prevActiveInstance;
+    }
+  }
+  
+  function initLifecycle (vm) {
+    var options = vm.$options;
+    
+    
+    var parent = options.parent;
+    if (parent && !options.abstract) {
+      while (parent.$options.abstract && parent.$parent) {
+        parent = parent.$parent;
+      }
+      parent.$children.push(vm);
+    }
+    
+    vm.$parent = parent;
+    vm.$root = parent ? parent.$root : vm;
+    
+    vm.$children = [];
+    vm.$refs = {};
+    
+    vm._watcher = null;
+    vm._inactive = null;
+    vm._directInactive = false;
+    vm._isMounted = false;
+    vm._isDestroyed = false;
+    vm._isBeingDestroyed = false;
+  }
+  
+  function lifecycleMixin (Vue) {
+    Vue.prototype._update = function (vnode, hydrating) {
+      var vm = this;
+      var prevEl = vm.$el;
+      var prevVnode = vm._vnode;
+      var restoreActiveInstance = setActiveInstance(vm);
+      vm._vnode = vnode;
+      
+      
+      if (!prevVnode) {
+      
+        vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */);
+      } else {
+        
+        vm.$el = vm.__patch__(prevVnode, vnode);
+      }
+      restoreActiveInstance();
+      
+      if (prevEl) {
+        prevEl.__vue__ = null;
+      }
+      if (vm.$el) {
+        vm.$el.__vue__ = vm;
+      }
+      
+      if (vm.$vnode && vm.$parent && vm.$vnode === vm.$parent._vnode) {
+        vm.$parent.$el = vm.$el;
+      }
+      
+      
+    };
+    
+    Vue.prototype.$forceUpdate = function () {
+      var vm = this;
+      if (vm._watcher) {
+        vm._watcher.update();
+      }
+    };
+    
+    Vue.prototype.$destroy = function () {
+      var vm = this;
+      if (vm._isBeingDestroyed) {
+        return
+      }
+      callHook(vm, 'beforeDestroy');
+      vm._isBeingDestroyed = true;
+      
+      var parent = vm.$parent;
+      if (parent && !parent._isBeingDestroyed && !vm.$options.abstract) {
+        remove(parent.$children, vm);
+      }
+      
+      if (vm._watcher) {
+        vm._watcher.teardown();
+      }
+      var i = vm._watchers.length;
+      while (i--) {
+        vm._watchers[i].teardown();
+      }
+      
+      
+      if (vm._data.__ob__) {
+        vm._data.__ob__.vmCount--;
+      }
+      
+      vm._isDestroyed = true;
+        
+      vm.__patch__(vm._vnode, null);
+      
+      callHook(vm, 'destroyed');
+      
+      vm.$off();
+      
+      if (vm.$el) {
+        vm.$el.__vue__ = null;
+      }
+      
+      if (vm.$vnode) {
+        vm.$vnode.parent = null;
+      }
+    };
+  }
+  
+  function mountComponent (
+    vm,
+    el,
+    hydrating
+  ) {
+    vm.$el = el;
+    if (!vm.$options.render) {
+      vm.$options.render = createEmptyVNode;
+      {
+        
+        if ((vm.$options.template && vm.$options.template.charAt(0) !== '#') ||
+          vm.$options.el || el) {
+          warn(
+            'You are using the runtime-only build of Vue where the template ' +
+            'compiler is not available. Either pre-compile the templates into ' +
+            'render functions, or use the compiler-included build.',
+            vm
+          );
+        } else {
+          warn(
+            'Failed to mount component: template or render function not defined.',
+            vm
+          );
+        }
+      }
+    }
+    callHook(vm, 'beforeMount');
+    
+    var updateComponent;
+    
+    if (config.performance && mark) {
+      updateComponent = function () {
+        var name = vm._name;
+        var id = vm._uid;
+        var startTag = "vue-perf-start:" + id;
+        var endTag = "vue-perf-end:" + id;
+        
+        mark(startTag);
+        var vnode = vm._render();
+        mark(endTag);
+        measure(("vue " + name + " render"), startTag, endTag);
+        
+        mark(startTag);
+        vm._update(vnode, hydrating);
+        mark(endTag);
+        measure(("vue " + name + " patch"), startTag, endTag);
+      };
+    } else {
+      updateComponent = function () {
+        vm._update(vm._render(), hydrating);
+      };
+    }
+    
+    
+    
+    
+    new Watcher(vm, updateComponent, noop, {
+      before: function before () {
+        if (vm._isMounted && !vm._isDestroyed) {
+          callHook(vm, 'beforeUpdate');
+        }
+      }
+    }, true /* isRenderWatcher */);
+    hydrating = false;
+    
+    
+    
+    if (vm.$vnode == null) {
+      vm._isMounted = true;
+      callHook(vm, 'mounted');
+    }
+    return vm
+  }
+  
+  function updateChildComponent (
+    vm,
+    propsData,
+    listeners,
+    parentVnode,
+    renderChildren
+  ) {
+    {
+      isUpdatingChildComponent = true;
+    }
+    
+    
+    
+    var hasChildren = !!(
+      renderChildren ||               // has new static slots
+      vm.$options._renderChildren ||  // has old static slots
+      parentVnode.data.scopedSlots || // has new scoped slots
+      vm.$scopedSlots !== emptyObject // has old scoped slots
+    );
+    
+    vm.$options._parentVnode = parentVnode;
+    vm.$vnode = parentVnode; // update vm's placeholder node without re-render
+    
+    if (vm._vnode) { // update child tree's parent
+      vm._vnode.parent = parentVnode;
+    }
+    vm.$options._renderChildren = renderChildren;
+    
+    
+    
+    
+    vm.$attrs = parentVnode.data.attrs || emptyObject;
+    vm.$listeners = listeners || emptyObject;
+    
+    
+    if (propsData && vm.$options.props) {
+      toggleObserving(false);
+      var props = vm._props;
+      var propKeys = vm.$options._propKeys || [];
+      for (var i = 0; i < propKeys.length; i++) {
+        var key = propKeys[i];
+        var propOptions = vm.$options.props; // wtf flow?
+        props[key] = validateProp(key, propOptions, propsData, vm);
+      }
+      toggleObserving(true);
+      
+      vm.$options.propsData = propsData;
+    }
+    
+    
+    listeners = listeners || emptyObject;
+    var oldListeners = vm.$options._parentListeners;
+    vm.$options._parentListeners = listeners;
+    updateComponentListeners(vm, listeners, oldListeners);
+    
+    
+    if (hasChildren) {
+      vm.$slots = resolveSlots(renderChildren, parentVnode.context);
+      vm.$forceUpdate();
+    }
+    
+    {
+      isUpdatingChildComponent = false;
+    }
+  }
+  
+  function isInInactiveTree (vm) {
+    while (vm && (vm = vm.$parent)) {
+      if (vm._inactive) { return true }
+    }
+    return false
+  }
+  
+  function activateChildComponent (vm, direct) {
+    if (direct) {
+      vm._directInactive = false;
+      if (isInInactiveTree(vm)) {
+        return
+      }
+    } else if (vm._directInactive) {
+      return
+    }
+    if (vm._inactive || vm._inactive === null) {
+      vm._inactive = false;
+      for (var i = 0; i < vm.$children.length; i++) {
+        activateChildComponent(vm.$children[i]);
+      }
+      callHook(vm, 'activated');
+    }
+  }
+  
+  function deactivateChildComponent (vm, direct) {
+    if (direct) {
+      vm._directInactive = true;
+      if (isInInactiveTree(vm)) {
+        return
+      }
+    }
+    if (!vm._inactive) {
+      vm._inactive = true;
+      for (var i = 0; i < vm.$children.length; i++) {
+        deactivateChildComponent(vm.$children[i]);
+      }
+      callHook(vm, 'deactivated');
+    }
+  }
+  
+  function callHook (vm, hook) {
+  
+    pushTarget();
+    var handlers = vm.$options[hook];
+    var info = hook + " hook";
+    if (handlers) {
+      for (var i = 0, j = handlers.length; i < j; i++) {
+        invokeWithErrorHandling(handlers[i], vm, null, vm, info);
+      }
+    }
+    if (vm._hasHookEvent) {
+      vm.$emit('hook:' + hook);
+    }
+    popTarget();
+  }
+  
+  
+  
+  var MAX_UPDATE_COUNT = 100;
+  
+  var queue = [];
+  var activatedChildren = [];
+  var has = {};
+  var circular = {};
+  var waiting = false;
+  var flushing = false;
+  var index = 0;
+  
+  
+  
+  
+  function resetSchedulerState () {
+    index = queue.length = activatedChildren.length = 0;
+    has = {};
+    {
+      circular = {};
+    }
+    waiting = flushing = false;
+  }
+  
+  
+  
+  
+  function flushSchedulerQueue () {
+    flushing = true;
+    var watcher, id;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    queue.sort(function (a, b) { return a.id - b.id; });
+    
+    
+    
+    for (index = 0; index < queue.length; index++) {
+      watcher = queue[index];
+      if (watcher.before) {
+        watcher.before();
+      }
+      id = watcher.id;
+      has[id] = null;
+      watcher.run();
+      
+      if (has[id] != null) {
+        circular[id] = (circular[id] || 0) + 1;
+        if (circular[id] > MAX_UPDATE_COUNT) {
+          warn(
+            'You may have an infinite update loop ' + (
+              watcher.user
+                ? ("in watcher with expression \"" + (watcher.expression) + "\"")
+                : "in a component render function."
+            ),
+            watcher.vm
+          );
+          break
+        }
+      }
+    }
+      
+      
+    var activatedQueue = activatedChildren.slice();
+    var updatedQueue = queue.slice();
+      
+    resetSchedulerState();
+    
+    
+    callActivatedHooks(activatedQueue);
+    callUpdatedHooks(updatedQueue);
+    
+    
+    
+    if (devtools && config.devtools) {
+      devtools.emit('flush');
+    }
+  }
+  
+  function callUpdatedHooks (queue) {
+    var i = queue.length;
+    while (i--) {
+      var watcher = queue[i];
+      var vm = watcher.vm;
+      if (vm._watcher === watcher && vm._isMounted && !vm._isDestroyed) {
+        callHook(vm, 'updated');
+      }
+    }
+  }
+            
