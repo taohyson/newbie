@@ -1787,3 +1787,480 @@
       while ((cur = cur.$parent)) {
         var hooks = cur.$options.errorCaptured;
         if (hooks) {
+          for (var i = 0; i < hooks.length; i++) {
+            try {
+              var capture = hooks[i].call(cur, err, vm, info) === false;
+              if (capture) { return }
+            } catch (e) {
+              globalHandleError(e, cur, 'errorCaptured hook');
+            }
+          }
+        }
+      }
+    }
+    globalHandleError(err, vm, info);
+  }
+  
+  function invokeWithErrorHandling (
+    handler,
+    context,
+    args,
+    vm,
+    info
+  ) {
+    var res;
+    try {
+      res = args ? handler.apply(context, args) : handler.call(context);
+      if (isPromise(res)) {
+        res.catch(function (e) { return handleError(e, vm, info + " (Promise/async)"); });
+      }
+    } catch (e) {
+      handleError(e, vm, info);
+    }
+    return res
+  }
+  
+  function globalHandleError (err, vm, info) {
+    if (config.errorHandler) {
+      try {
+        return config.errorHandler.call(null, err, vm, info)
+      } catch (e) {
+        logError(e, null, 'config.errorHandler');
+      }
+    }
+    logError(err, vm, info);
+  }
+  
+  function logError (err, vm, info) {
+    {
+      warn(("Error in " + info + ": \"" + (err.toString()) + "\""), vm);
+    }
+    
+    if ((inBrowser || inWeex) && typeof console !== 'undefined') {
+      console.error(err);
+    } else {
+      throw err
+    }
+  }
+  
+  
+  
+  var callbacks = [];
+  var pending = false;
+  
+  function flushCallbacks () {
+    pending = false;
+    var copies = callbacks.slice(0);
+    callbacks.length = 0;
+    for (var i = 0; i < copies.length; i++) {
+      copies[i]();
+    }
+  }                             
+
+
+
+  var timerFunc;
+  
+  
+  
+  
+  
+  
+  
+  
+  if (typeof Promise !== 'undefined' && isNative(Promise)) {
+    var p = Promise.resolve();
+    timerFunc = function () {
+      p.then(flushCallbacks);
+      
+      
+      
+      
+      
+      if (isIOS) { setTimeout(noop); }
+    };
+  } else if (!isIE && typeof MutationObserver !== 'undefined' && (
+    isNative(MutationObserver) ||
+    
+    MutationObserver.toString() === '[object MutationObserverConstructor]'
+  )) {
+  
+  
+  
+    var counter = 1;
+    var observer = new MutationObserver(flushCallbacks);
+    var textNode = document.createTextNode(String(counter));
+    observer.observe(textNode, {
+      characterData: true
+    });
+    timerFunc = function () {
+      counter = (counter + 1) % 2;
+      textNode.data = String(counter);
+    };
+  } else if (typeof setImmediate !== 'undefined' && isNative(setImmediate)) {
+  
+  
+  
+    timerFunc = function () {
+      setImmediate(flushCallbacks);
+    };
+  } else {
+  
+    timerFunc = function() {
+      setTimeout(flushCallbacks, 0);
+    };
+  }
+  
+  function nextTick (cb, ctx) {
+    var _resolve;
+    callbacks.push(function () {
+      if (cb) {
+        try {
+          cb.call(ctx);
+        } catch (e) {
+          handleError(e, ctx, 'nextTick');
+        }
+      } else if (_resolve) {
+        _resolve(ctx);
+      }
+    });
+    if (!pending) {
+      pending = true;
+      timerFunc();
+    }
+    
+    if (!cb && typeof Promise !== 'undefined') {
+      return new Promise(function (resolve) {
+        _resolve = resolve;
+      })
+    }
+  }
+  
+  
+  
+  var mark;
+  var measure;
+  
+  {
+    var perf = inBrowser && window.performance;
+    
+    if (
+      perf &&
+      perf.mark &&
+      perf.measure &&
+      perf.clearMarks &&
+      perf.clearMeasures
+    ) {
+      mark = function (tag) { return perf.mark(tag); };
+      measure = function (name, startTag, endTag) {
+        perf.measure(name, startTag, endTag);
+        perf.clearMarks(startTag);
+        perf.clearMarks(endTag);
+        
+      };
+    }
+  }
+  
+  
+  
+  var initProxy;
+  
+  {
+    var allowedGlobals = makeMap(
+      'Infinity,undefined,NaN,isFinite,isNaN,' +
+      'parseFloat,parseInt,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent,' +
+      'Math,Number,Date,Array,Object,Boolean,String,RegExp,Map,Set,JSON,Intl,' +
+      'require' // for Webpack/Browserify
+    );
+    
+    var warnNonPresent = function (target, key) {
+      warn(
+        "Property or method \"" + key + "\" is not defined on the instance but " +
+        'referenced during render. Make sure that this property is reactive, ' +
+        'either in the data option, or for class-based components, by ' +
+        'initializing the property. ' +
+        'See: https://vuejs.org/v2/guide/reactivity.html#Declaring-Reactive-Properties.',
+        target
+      );
+    };
+    
+    var warnReservedPrefix = function (target, key) {
+      warn(
+        "Property \"" + key + "\" must be accessed with \"$data." + key + "\" because " +
+        'properties starting with "$" or "_" are not proxied in the Vue instance to ' +
+        'prevent conflicts with Vue internals' +
+        'See: https://vuejs.org/v2/api/#data',
+        target
+      );
+    };
+    
+    var hasProxy =
+      typeof Proxy !== 'undefined' && isNative(Proxy);
+      
+    if (hasProxy) {
+      var isBuiltInModifier = makeMap('stop,prevent,self,ctrl,shift,alt,meta,exact');
+      config.keyCodes = new Proxy(config.keyCodes, {
+        set: function set(target, key, value) {
+          if (isBuiltInModifier(key)) {
+            warn(("Avoid overwriting built in modifier in config.keyCodes: ." + key));
+            return false
+          } else {
+            target[key] = value;
+            return true
+          }
+        }
+      });
+    }
+    
+    var hasHandler = {
+      has: function has (target, key) {
+        var has = key in target;
+        var isAllowed = allowedGlobals(key) ||
+          (typeof key === 'string' && key.charAt(0) === '_' && !(key in target.$data));
+        if (!has && !isAllowed) {
+          if (key in target.$data) { warnReservedPrefix(target, key); }
+          else { warnNonPresent(target, key); }
+        }
+        return has || !isAllowed
+      }
+    };
+    
+    var getHandler = {
+      get: function get (target, key) {
+        if (typeof key === 'string' && !(key in target)) {
+          if (key in target.$data) { warnReservedPrefix(target, key); }
+          else { warnNonPresent(target, key); }
+        }
+        return target[key]
+      }
+    };
+    
+    initProxy = function initProxy (vm) {
+      if (hasProxy) {
+        
+        var options = vm.$options;
+        var handlers = options.render && options.render._withStripped
+          ? getHandler
+          : hasHandler;
+        vm._renderProxy = new Proxy(vm, handlers);
+      } else {
+        vm._renderProxy = vm;
+      }
+    };
+  }
+  
+  
+  
+  var seenObjects = new _Set();
+  
+  
+  
+  
+  
+  
+  function traverse (val) {
+    _traverse(val, seenObjects);
+    seenObjects.clear();
+  }
+  
+  function _traverse (val, seen) {
+    var i, keys;
+    var isA = Array.isArray(val);
+    if ((!isA && !isObject(val)) || Object.isFrozen(val) || val instanceof VNode) {
+      return
+    }
+    if (val.__ob__) {
+      var depId =val.__ob__.dep.id;
+      if (seen.has(depId)) {
+        return
+      }
+      seen.add(depId);
+    }
+    if (isA) {
+      i = val.length;
+      while (i--) { _traverse(val[i], seen); }
+    } else {
+      keys = Object.keys(val);
+      i = keys.length;
+      while (i--) { _traverse(val[keys[i]], seen); }
+    }
+  }
+  
+  
+  
+  var normalizeEvent = cached(function (name) {
+    var passive = name.charAt(0) === '&';
+    name = passive ? name.slice(1) : name;
+    var once$$1 = name.charAt(0) === '~'; // Prefixed last, checked first
+    name = once$$1 ? name.slice(1) : name;
+    var capture = name.charAt(0) === '!';
+    name = capture ? name.slice(1) : name;
+    return {
+      name: name,
+      once: once$$1,
+      capture: capture,
+      passive: passive
+    }
+  });
+  
+  function createFnInvoker (fns, vm) {
+    function invoker () {
+      var arguments$1 = arguments;
+      
+      var fns = invoker.fns;
+      if (Array.isArray(fns)) {
+        var cloned = fns.slice();
+        for (var i = 0; i < cloned.length; i++) {
+          invokeWithErrorHandling(cloned[i], null, arguments$1, vm, "v-on handler");
+        }
+      } else {
+      
+        return invokeWithErrorHandling(fns, null, arguments, vm, "v-on handler")
+      }
+    }
+    invoker.fns = fns;
+    return invoker
+  }
+  
+  function updateListeners (
+    on,
+    oldOn,
+    add,
+    remove$$1,
+    createOnceHandler,
+    vm
+  ) {
+    var name, def$$1, cur, old, event;
+    for (name in on) {
+      def$$1 = cur = on[name];
+      old = oldOn[name];
+      event = normalizeEvent(name);
+      if (isUndef(cur)) {
+        warn(
+          "Invalid handler for event \"" + (event.name) + "\": got " + String(cur),
+          vm
+        );
+      } else if (isUndef(old)) {
+        if (isUndef(cur.fns)) {
+          cur = on[name] = createFnInvoker(cur, vm);
+        }
+        if (isTrue(event.once)) {
+          cur = on[name] = createOnceHandler(event.name, cur, event.capture);
+        }
+        add(event.name, cur, event.capture, event.passive, event.params);
+      } else if (cur !== old) {
+        old.fns = cur;
+        on[name] = old;
+      }
+    }
+    for (name in oldOn) {
+      if (isUndef(on[name])) {
+        event = normalizeEvent(name);
+        remove$$1(event.name, oldOn[name], event.capture);
+      }
+    }
+  }
+  
+  
+  
+  function mergeVNodeHook (def, hookKey, hook) {
+    if (def instanceof VNode) {
+      def = def.data.hook || (def.data.hook = {});
+    }
+    var invoker;
+    var oldHook = def[hookKey];
+    
+    function wrappedHook () {
+      hook.apply(this, arguments);
+      
+      
+      remove(invoker.fns, wrappedHook);
+    }
+    
+    if (isUndef(oldHook)) {
+      
+      invoker = createFnInvoker([wrappedHook]);
+    } else {
+      
+      if (isDef(oldHook.fns) && isTrue(oldHook.merged)) {
+      
+        invoker = oldHook;
+        invoker.fns.push(wrappedHook);
+      } else {
+      
+        invoker = createFnInvoker([oldHook, wrappedHook]);
+      }
+    }
+    
+    invoker.merged = true;
+    def[hookKey] = invoker;
+  }
+  
+  
+  
+  function extractPropsFromVNodeData (
+    data,
+    Ctor,
+    tag
+  ) {
+  
+  
+  
+    var propOptions = Ctor.options.props;
+    if (isUndef(propOptions)) {
+      return
+    }
+    var res = {};
+    var attrs = data.attrs;
+    var props = data.props;
+    if (isDef(attrs) || isDef(props)) {
+      for (var key in propOptions) {
+        var altKey = hyphenate(key);
+        {
+          var keyInLowerCase = key.toLowerCase();
+          if (
+            key !== keyInLowerCase &&
+            attrs && hasOwn(attrs, keyInLowerCase)
+          ) {
+            tip(
+              "Prop \"" + keyInLowerCase + "\" is passed to component " +
+              (formatComponentName(tag || Ctor)) + ", but the declared prop name is" +
+              " \"" + key + "\". " +
+              "Note that HTML attributes are case-insensitive and camelCased " +
+              "props need to use their kebab-case equivalents when using in-DOM " +
+              "templates. You should probably use \"" + altKey + "\" instead of \"" + key + "\"."
+            );
+          }
+        }
+        checkProp(res, props, key, altKey, true) ||
+        checkProp(res, attrs, key, altKey, false);
+      }
+    }
+    return res
+  }
+  
+  function checkProp (
+    res,
+    hash,
+    key,
+    altKey,
+    preserve
+  ) {
+    if (isDef(hash)) {
+      if (hasOwn(hash, key)) {
+        res[key] = hash[key];
+        if (!preserve) {
+          delete hash[key];
+        }
+        return true
+      } else if (hasOwn(hash, altKey)) {
+        res[key] = hash[altKey];
+        if (!preserve) {
+          delete hash[altKey];
+        }
+        return true
+      }
+    }
+    return false
+  }
+                                 
