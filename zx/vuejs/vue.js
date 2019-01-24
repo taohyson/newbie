@@ -5187,4 +5187,885 @@
     }
   });
   
-                                     
+  
+  Object.defineProperty(Vue, 'FunctionalRenderContext', {
+    value: FunctionalRenderContext
+  });
+  
+  Vue.version = '2.6.0-beta.1';
+  
+  
+  
+  
+  
+  var isReservedAttr = makeMap('style,class');
+  
+  
+  var acceptValue = makeMap('input,textarea,option,select,progress');
+  var mustUseProp = function (tag, type, attr) {
+    return (
+      (attr === 'value' && acceptValue(tag)) && type !== 'button' ||
+      (attr === 'selected' && tag === 'option') ||
+      (attr === 'checked' && tag === 'input') ||
+      (attr === 'muted' && tag === 'video')
+    )
+  };
+  
+  var isEnumeratedAttr = makeMap('contenteditable,draggable,spellcheck');
+  
+  var isBooleanAttr = makeMap(
+    'allowfullscreen,async,autofocus,autoplay,checked,compact,controls,declare,' +
+    'default,defaultchecked,defaultmuted,defaultselected,defer,disabled,' +
+    'enabled,formnovalidate,hidden,indeterminate,inert,ismap,itemscope,loop,multiple,' +
+    'muted,nohref,noresize,noshade,novalidate,nowrap,open,pauseonexit,readonly,' +
+    'required,reversed,scoped,seamless,selected,sortable,translate,' +
+    'truespeed,typemustmatch,visible'
+  );
+  
+  var xlinkNS = 'http://www.w3.org/1999/xlink';
+  
+  var isXlink = function (name) {
+    return name.charAt(5) === ':' && name.slice(0, 5) === 'xlink'
+  };
+  
+  var getXlinkProp = function (name) {
+    return isXlink(name) ? name.slice(6, name.length) : ''
+  };
+  
+  var isFalsyAttrValue = function (val) {
+    return val == null || val === false
+  };
+  
+  
+  
+  function genClassForVnode (vnode) {
+    var data = vnode.data;
+    var parentNode = vnode;
+    var childNode = vnode;
+    while (isDef(childNode.componentInstance)) {
+      childNode = childNode.componentInstance._vnode;
+      if (childNode && childNode.data) {
+        data = mergeClassData(childNode.data, data);
+      }
+    }
+    while (isDef(parentNode = parentNode.parent)) {
+      if (parentNode && parentNode.data) {
+        data = mergeClassData(data, parentNode.data);
+      }
+    }
+    return renderClass(data.staticClass, data.class)
+  }
+  
+  function mergeClassData (child, parent) {
+    return {
+      staticClass: concat(child.staticClass, parent.staticClass),
+      class: isDef(child.class)
+        ? [child.class, parent.class]
+        : parent.class
+    }
+  }
+  
+  function renderClass (
+    staticClass,
+    dynamicClass
+  ) {
+    if (isDef(staticClass) || isDef(dynamicClass)) {
+      return concat(staticClass, stringifyClass(dynamicClass))
+    }
+    
+    return ''
+  }
+  
+  function concat (a, b) {
+    return a ? b ? (a + ' ' + b) : a : (b || '')
+  }
+  
+  function stringifyClass (value) {
+    if (Array.isArray(value)) {
+      return stringifyArray(value)
+    }
+    if (isObject(value)) {
+      return stringifyObject(value)
+    }
+    if (typeof value === 'string') {
+      return value
+    }
+    
+    return ''
+  }
+  
+  function stringifyArray (value) {
+    var res = '';
+    var stringified;
+    for (var i = 0, l = value.length; i < l; i++) {
+      if (isDef(stringified = stringifyClass(value[i])) && stringified !== '') {
+        if (res) { res += ' '; }
+        res += stringified;
+      }
+    }
+    return res
+  }
+  
+  function stringifyObject (value) {
+    var res = '';
+    for (var key in value) {
+      if (value[key]) {
+        if (res) { res += ' '; }
+        res += key;
+      }
+    }
+    return res
+  }
+  
+  
+  
+  var namespaceMap = {
+    svg: 'http://www.w3.org/2000/svg',
+    math: 'http://www.w3.org/1998/Math/MathML'
+  };
+  
+  var isHTMLTag = makeMap(
+    'html,body,base,head,link,meta,style,title,' +
+    'address,article,aside,footer,header,h1,h2,h3,h4,h5,h6,hgroup,nav,section,' +
+    'div,dd,dl,dt,figcaption,figure,picture,hr,img,li,main,ol,p,pre,ul,' +
+    'a,b,abbr,bdi,bdo,br,cite,code,data,dfn,em,i,kbd,mark,q,rp,rt,rtc,ruby,' +
+    's,samp,small,span,strong,sub,sup,time,u,var,wbr,area,audio,map,track,video,' +
+    'embed,object,param,source,canvas,script,noscript,del,ins,' +
+    'caption,col,colgroup,table,thead,tbody,td,th,tr,' +
+    'button,datalist,fieldset,form,input,label,legend,meter,optgroup,option,' +
+    'output,progress,select,textarea,' +
+    'details,dialog,menu,menuitem,summary,' +
+    'content,element,shadow,template,blockquote,iframe,tfoot'
+  );
+  
+  
+  
+  var isSVG = makeMap(
+    'svg,animate,circle,clippath,cursor,defs,desc,ellipse,filter,font-face,' +
+    'foreignObject,g,glyph,image,line,marker,mask,missing-glyph,path,pattern,' +
+    'polygon,polyline,rect,switch,symbol,text,textpath,tspan,use,view',
+    true
+  );
+  
+  var isPreTag = function (tag) { return tag === 'pre'; };
+  
+  var isReservedTag = function (tag) {
+    return isHTMLTag(tag) || isSVG(tag)
+  };
+  
+  function getTagNamespace (tag) {
+    if (isSVG(tag)) {
+      return 'svg'
+    }
+    
+    
+    if (tag === 'math') {
+      return 'math'
+    }
+  }
+  
+  var unknownElementCache = Object.create(null);
+  function isUnknownElement (tag) {
+  
+    if (!inBrowser) {
+      return true
+    }
+    if (isReservedTag(tag)) {
+      return false
+    }
+    tag = tag.toLowerCase();
+    
+    if (unknownElementCache[tag] != null) {
+      return unknownElementCache[tag]
+    }
+    var el = document.createElement(tag);
+    if (tag.indexOf('-') > -1) {
+      
+      return (unknownElementCache[tag] = (
+        el.constructor === window.HTMLUnknownElement ||
+        el.constructor === window.HTMLElement
+      ))
+    } else {
+      return (unknownElementCache[tag] = /HTMLUnknownElement/.test(el.toString()))
+    }
+  }
+  
+  var isTextInputType = makeMap('text,number,password,search,email,tel,url');
+  
+  
+  
+  
+  
+  
+  function query (el) {
+    if (typeof el === 'string') {
+      var selected = document.querySelector(el);
+      if (!selected) {
+        warn(
+          'Cannot find element: ' + el
+        );
+        return document.createElement('div')
+      }
+      return selected
+    } else {
+      return el
+    }
+  }
+  
+  
+  
+  function createElement$1 (tagName, vnode) {
+    var elm = document.createElement(tagName);
+    if (tagName !== 'select') {
+      return elm
+    }
+    
+    if (vnode.data && vnode.data.attrs && vnode.data.attrs.multiple !== undefined) {
+      elm.setAttribute('multiple', 'multiple');
+    }
+    return elm
+  }
+  
+  function createElementNS (namespace, tagName) {
+    return document.createElementNS(namespaceMap[namespace], tagName)
+  }
+  
+  function createTextNode (text) {
+    return document.createTextNode(text)
+  }
+  
+  function createComment (text) {
+    return document.createComment(text)
+  }
+  
+  function insertBefore (parentNode, newNode, referenceNode) {
+    parentNode.insertBefore(newNode, referenceNode);
+  }
+  
+  function removeChild (node, child) {
+    node.removeChild(child);
+  }
+  
+  function appendChild (node, child) {
+    node.appendChild(child);
+  }
+  
+  function parentNode (node) {
+    return node.parentNode
+  }
+  
+  function nextSibling (node) {
+    return node.nextSibling
+  }
+  
+  function tagName (node) {
+    return node.tagName
+  }
+  
+  function setTextContent (node, text) {
+    node.textContent = text;
+  }
+  
+  function setStyleScope (node, scopeId) {
+    node.setAttribute(scopeId, '');
+  }
+  
+  var nodeOps = /*#__PURE__*/Object.freeze({
+    createElement: createElement$1,
+    createElementNS: createElementNS,
+    createTextNode: createTextNode,
+    createComment: createComment,
+    insertBefore: insertBefore,
+    removeChild: removeChild,
+    appendChild: appendChild,
+    parentNode: parentNode,
+    nextSibling: nextSibling,
+    tagName: tagName,
+    setTextContent: setTextContent,
+    setStyleScope: setStyleScope
+  });
+  
+  
+  
+  var ref = {
+    create: function create (_, vnode) {
+      registerRef(vnode);
+    },
+    update: function update (oldVnode, vnode) {
+      if (oldVnode.data.ref !== vnode.data.ref) {
+        registerRef(oldVnode, true);
+        registerRef(vnode);
+      }
+    },
+    destroy: function destroy (vnode) {
+      registerRef(vnode, true);
+    }
+  };
+  
+  function registerRef (vnode, isRemoval) {
+    var key = vnode.data.ref;
+    if (!isDef(key)) { return }
+    
+    var vm = vnode.context;
+    var ref = vnode.componentInstance || vnode.elm;
+    var refs = vm.$refs;
+    if (isRemoval) {
+      if (Array.isArray(refs[key])) {
+        remove(refs[key], ref);
+      } else if (refs[key] === ref) {
+        refs[key] = undefined;
+      }
+    } else {
+      if (vnode.data.refInFor) {
+        if (!Array.isArray(refs[key])) {
+          refs[key] = [ref];
+        } else if (refs[key].indexOf(ref) < 0) {
+          
+          refs[key].push(ref);
+        }
+      } else {
+        refs[key] = ref;
+      }
+    }
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+                              
+  
+  var emptyNode = new VNode('', {}, []);
+  
+  var hooks = ['create', 'activate', 'update', 'remove', 'destroy'];
+  
+  function sameVnode (a, b) {
+    return (
+      a.key === b.key && (
+        (
+          a.tag === b.tag &&
+          a.isComment === b.isComment &&
+          isDef(a.data) === isDef(b.data) &&
+          sameInputType(a, b)
+        ) || (
+          isTrue(a.isAsyncPlaceholder) &&
+          a.asyncFactory === b.asyncFactory &&
+          isUndef(b.asyncFactory.error)
+        )
+      )
+    )
+  }
+  
+  function sameInputType (a, b) {
+    if (a.tag !== 'input') { return true }
+    var i;
+    var typeA = isDef(i = a.data) && isDef(i = i.attrs) && i.type;
+    var typeB = isDef(i = b.data) && isDef(i = i.attrs) && i.type;
+    return typeA === typeB || isTextInputType(typeA) && isTextInputType(typeB)
+  }
+  
+  function createKeyToOldIdx (children, beginIdx, endIdx) {
+    var i, key;
+    var map = {};
+    for (i = beginIdx; i <= endIdx; ++i) {
+      key = children[i].key;
+      if (isDef(key)) { map[key] = i; }
+    }
+    return map
+  }
+  
+  function createPatchFunction (backend) {
+    var i, j;
+    var cbs = {};
+    
+    var modules = backend.modules;
+    var nodeOps = backend.nodeOps;
+    
+    for (i = 0; i < hooks.length; ++i) {
+      cbs[hooks[i]] = [];
+      for (j = 0; j < modules.length; ++j) {
+        if (isDef(modules[j][hooks[i]])) {
+          cbs[hooks[i]].push(modules[j][hooks[i]]);
+        }
+      }
+    }
+    
+    function emptyNodeAt (elm) {
+      return new VNode(nodeOps.tagName(elm).toLowerCase(), {}, [], undefined, elm)
+    }
+    
+    function createRmCb (childElm, listeners) {
+      function remove$$1 () {
+        if (--remove$$1.listeners === 0) {
+          removeNode(childElm);
+        }
+      }
+      remove$$1.listeners = listeners;
+      return remove$$1
+    }
+    
+    function removeNode (el) {
+      var parent = nodeOps.parentNode(el);
+      
+      if (isDef(parent)) {
+        nodeOps.removeChild(parent, el);
+      }
+    }
+    
+    function isUnknownElement$$1 (vnode, inVPre) {
+      return (
+        !inVPre &&
+        !vnode.ns &&
+        !(
+          config.ignoredElements.length &&
+          config.ignoredElements.some(function (ignore) {
+            return isRegExp(ignore)
+              ? ignore.test(vnode.tag)
+              : ignore === vnode.tag
+            })
+        ) &&
+        config.isUnknownElement(vnode.tag)
+      )
+    }
+    
+    var creatingElmInVPre = 0;
+    
+    function createElm (
+      vnode,
+      insertedVnodeQueue,
+      parentElm,
+      refElm,
+      nested,
+      ownerArray,
+      index
+    ) {
+      if (isDef(vnode.elm) && isDef(ownerArray)) {
+        
+        
+        
+        
+        
+        vnode = ownerArray[index] = cloneVNode(vnode);
+      }
+      
+      vnode.isRootInsert = !nested; // for transition enter check
+      if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) {
+        return
+      }
+      
+      var data = vnode.data;
+      var children = vnode.children;
+      var tag = vnode.tag;
+      if (isDef(tag)) {
+        {
+          if (data && data.pre) {
+            creatingElmInVPre++;
+          }
+          if (isUnknownElement$$1(vnode, creatingElmInVPre)) {
+            warn(
+              'Unknown custom element: <' + tag + '> - did you ' +
+              'register the component correctly? For recursive components, ' +
+              'make sure to provide the "name" option.',
+              vnode.context
+            );
+          }
+        }
+        
+        vnode.elm = vnode.ns
+          ? nodeOps.createElementNS(vnode.ns, tag)
+          : nodeOps.createElement(tag, vnode);
+        setScope(vnode);
+        
+        
+        {
+          createChildren(vnode, children, insertedVnodeQueue);
+          if (isDef(data)) {
+            invokeCreateHooks(vnode, insertedVnodeQueue);
+          }
+          insert(parentElm, vnode.elm, refElm);
+        }
+        
+        if (data && data.pre) {
+          creatingElmInVPre--;
+        }
+      } else if (isTrue(vnode.isComment)) {
+        vnode.elm = nodeOps.createComment(vnode.text);
+        insert(parentElm, vnode.elm, refElm);
+      } else {
+        vnode.elm = nodeOps.createTextNode(vnode.text);
+        insert(parentElm, vnode.elm, refElm);
+      }
+    }
+    
+    function createComponent (vnode, insertedVnodeQueue, parentElm, refElm) {
+      var i = vnode.data;
+      if (isDef(i)) {
+        var isReactivated = isDef(vnode.componentInstance) && i.keepAlive;
+        if (isDef(i = i.hook) && isDef(i = i.init)) {
+          i(vnode, false /* hydrating */);
+        }
+        
+        
+        
+        
+        if (isDef(vnode.componentInstance)) {
+          initComponent(vnode, insertedVnodeQueue);
+          insert(parentElm, vnode.elm, refElm);
+          if (isTrue(isReactivated)) {
+            reactivateComponent(vnode, insertedVnodeQueue, parentElm, refElm);
+          }
+          return true
+        }
+      }
+    }
+    
+    function initComponent (vnode, insertedVnodeQueue) {
+      if (isDef(vnode.data.pendingInsert)) {
+        insertedVnodeQueue.push.apply(insertedVnodeQueue, vnode.data.pendingInsert);
+        vnode.data.pendingInsert = null;
+      }
+      vnode.elm = vnode.componentInstance.$el;
+      if (isPatchable(vnode)) {
+        invokeCreateHooks(vnode, insertedVnodeQueue);
+        setScope(vnode);
+      } else {
+        
+        
+        registerRef(vnode);
+        
+        insertedVnodeQueue.push(vnode);
+      }
+    }
+    
+    function reactivateComponent (vnode, insertedVnodeQueue, parentElm, refElm) {
+      var i;
+      
+      
+      
+      
+      var innerNode = vnode;
+      while (innerNode.componentInstance) {
+        innerNode = innerNode.componentInstance._vnode;
+        if (isDef(i = innerNode.data) && isDef(i = i.transition)) {
+          for (i = 0; i < cbs.activate.length; ++i) {
+            cbs.activate[i](emptyNode, innerNode);
+          }
+          insertedVnodeQueue.push(innerNode);
+          break
+        }
+      }
+      
+      
+      insert(parentElm, vnode.elm, refElm);
+    }
+    
+    function insert (parent, elm, ref$$1) {
+      if (isDef(parent)) {
+        if (isDef(ref$$1)) {
+          if (nodeOps.parentNode(ref$$1) === parent) {
+            nodeOps.insertBefore(parent, elm, ref$$1);
+          }
+        } else {
+          nodeOps.appendChild(parent, elm);
+        }
+      }
+    }
+    
+    function createChildren (vnode, children, insertedVnodeQueue) {
+      if (Array.isArray(children)) {
+        {
+          checkDuplicateKeys(children);
+        }
+        for (var i = 0; i < children.length; ++i) {
+          createElm(children[i], insertedVnodeQueue, vnode.elm, null, true, children, i);
+        }
+      } else if (isPrimitive(vnode.text)) {
+        nodeOps.appendChild(vnode.elm, nodeOps.createTextNode(String(vnode.text)));
+      }
+    }
+    
+    function isPatchable (vnode) {
+      while (vnode.componentInstance) {
+        vnode = vnode.componentInstance._vnode;
+      }
+      return isDef(vnode.tag)
+    }
+    
+    function invokeCreateHooks (vnode, insertedVnodeQueue) {
+      for (var i$1 = 0; i$1 < cbs.create.length; ++i$1) {
+        cbs.create[i$1](emptyNode, vnode);
+      }
+      i = vnode.data.hook; // Reuse variable
+      if (isDef(i)) {
+        if (isDef(i.create)) { i.create(emptyNode, vnode); }
+        if (isDef(i.insert)) { insertedVnodeQueue.push(vnode); }
+      }
+    }
+    
+    
+    
+    
+    function setScope (vnode) {
+      var i;
+      if (isDef(i = vnode.fnScopeId)) {
+        nodeOps.setStyleScope(vnode.elm, i);
+      } else {
+        var ancestor = vnode;
+        while (ancestor) {
+          if (isDef(i = ancestor.context) && isDef(i = i.$options._scopeId)) {
+            nodeOps.setStyleScope(vnode.elm, i);
+          }
+          ancestor = ancestor.parent;
+        }
+      }
+      
+      if (isDef(i = activeInstance) &&
+        i !== vnode.context &&
+        i !== vnode.fnContext &&
+        isDef(i = i.$options._scopeId)
+      ) {
+        nodeOps.setStyleScope(vnode.elm, i);
+      }
+    }
+    
+    function addVnodes (parentElm, refElm, vnodes, startIdx, endIdx, insertedVnodeQueue) {
+      for (; startIdx <= endIdx; ++startIdx) {
+        createElm(vnodes[startIdx], insertedVnodeQueue, parentElm, refElm, false, vnodes, startIdx);
+      }
+    }
+    
+    function invokeDestroyHook (vnode) {
+      var i, j;
+      var data = vnode.data;
+      if (isDef(data)) {
+        if (isDef(i = data.hook) && isDef(i = i.destroy)) { i(vnode); }
+        for (i = 0; i < cbs.destroy.length; ++i) { cbs.destroy[i](vnode); }
+      }
+      if (isDef(i = vnode.children)) {
+        for (j = 0; j < vnode.children.length; ++j) {
+          invokeDestroyHook(vnode.children[j]);
+        }
+      }
+    }
+    
+    function removeVnodes (parentElm, vnodes, startIdx, endIdx) {
+      for (; startIdx <= endIdx; ++startIdx) {
+        var ch = vnodes[startIdx];
+        if (isDef(ch)) {
+          if (isDef(ch.tag)) {
+            removeAndInvokeRemoveHook(ch);
+            invokeDestroyHook(ch);
+          } else { // Text node
+            removeNode(ch.elm);
+          }
+        }
+      }
+    }
+    
+    function removeAndInvokeRemoveHook (vnode, rm) {
+      if (isDef(rm) || isDef(vnode.data)) {
+        var i;
+        var listeners = cbs.remove.length + 1;
+        if (isDef(rm)) {
+        
+        
+          rm.listeners += listeners;
+        } else {
+        
+          rm = createRmCb(vnode.elm, listeners);
+        }
+        
+        if (isDef(i = vnode.componentInstance) && isDef(i = i._vnode) && isDef(i.data)) {
+          removeAndInvokeRemoveHook(i, rm);
+        }
+        for (i = 0; i < cbs.remove.length; ++i) {
+          cbs.remove[i](vnode, rm);
+        }
+        if (isDef(i = vnode.data.hook) && isDef(i = i.remove)) {
+          i(vnode, rm);
+        } else {
+          rm();
+        }
+      } else {
+        removeNode(vnode.elm);
+      }
+    }
+    
+    function updateChildren (parentElm, oldCh, newCh, insertedVnodeQueue, removeOnly) {
+      var oldStartIdx = 0;
+      var newStartIdx = 0;
+      var oldEndIdx = oldCh.length - 1;
+      var oldStartVnode = oldCh[0];
+      var oldEndVnode = oldCh[oldEndIdx];
+      var newEndIdx = newCh.length - 1;
+      var newStartVnode = newCh[0];
+      var newEndVnode = newCh[newEndIdx];
+      var oldKeyToIdx, idxInOld, vnodeToMove, refElm;
+      
+      
+      
+      
+      var canMove = !removeOnly;
+      
+      {
+        checkDuplicateKeys(newCh);
+      }
+      
+      while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
+        if (isUndef(oldStartVnode)) {
+          oldStartVnode = oldCh[++oldStartIdx]; // Vnode has been moved left
+        } else if (isUndef(oldEndVnode)) {
+          oldEndVnode = oldCh[--oldEndIdx];
+        } else if (sameVnode(oldStartVnode, newStartVnode)) {
+          patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue, newCh, newStartIdx);
+          oldStartVnode = oldCh[++oldStartIdx];
+          newStartVnode = newCh[++newStartIdx];
+        } else if (sameVnode(oldEndVnode, newEndVnode)) {
+          patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue, newCh, newEndIdx);
+          oldEndVnode = oldCh[--oldEndIdx];
+          newEndVnode = newCh[--newEndIdx];
+        } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
+          patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue, newCh, newEndIdx);
+          canMove && nodeOps.insertBefore(parentElm, oldStartVnode.elm, nodeOps.nextSibling(oldEndVnode.elm));
+          oldStartVnode = oldCh[++oldStartIdx];
+          newEndVnode = newCh[--newEndIdx];
+        } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
+          patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue, newCh, newStartIdx);
+          canMove && nodeOps.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm);
+          oldEndVnode = oldCh[--oldEndIdx];
+          newStartVnode = newCh[++newStartIdx];
+        } else {
+          if (isUndef(oldKeyToIdx)) { oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx); }
+          idxInOld = isDef(newStartVnode.key)
+            ? oldKeyToIdx[newStartVnode.key]
+            : findIdxInOld(newStartVnode, oldCh, oldStartIdx, oldEndIdx);
+          if (isUndef(idxInOld)) { // New element
+            createElm(newStartVnode, insertedVnodeQueue, parentElm, oldStartVnode.elm, false, newCh, newStartIdx);
+          } else {
+            vnodeToMove = oldCh[idxInOld];
+            if (sameVnode(vnodeToMove, newStartVnode)) {
+              patchVnode(vnodeToMove, newStartVnode, insertedVnodeQueue, newCh, newStartIdx);
+              oldCh[idxInOld] = undefined;
+              canMove && nodeOps.insertBefore(parentElm, vnodeToMove.elm, oldStartVnode.elm);
+            } else {
+              
+              createElm(newStartVnode, insertedVnodeQueue, parentElm, oldStartVnode.elm, false, newCh, newStartIdx);
+            }
+          }
+          newStartVnode = newCh[++newStartIdx];
+        }
+      }
+      if (oldStartIdx > oldEndIdx) {
+        refElm = isUndef(newCh[newEndIdx + 1]) ? null : newCh[newEndIdx + 1].elm;
+        addVnodes(parentElm, refElm, newCh, newStartIdx, newEndIdx, insertedVnodeQueue);
+      } else if (newStartIdx > newEndIdx) {
+        removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
+      }
+    }
+    
+    function checkDuplicateKeys (children) {
+      var seenKeys = {};
+      for (var i = 0; i < children.length; i++) {
+        var vnode = children[i];
+        var key = vnode.key;
+        if (isDef(key)) {
+          if (seenKeys[key]) {
+            warn(
+              ("Duplicate keys detected: '" + key + "'. This may cause an update error."),
+              vnode.context
+            );
+          } else {
+            seenKeys[key] = true;
+          }
+        }
+      }
+    }
+    
+    function findIdxInOld (node, oldCh, start, end) {
+      for (var i = start; i < end; i++) {
+        var c = oldCh[i];
+        if (isDef(c) && sameVnode(node, c)) { return i }
+      }
+    }
+    
+    function patchVnode (
+      oldVnode,
+      vnode,
+      insertedVnodeQueue,
+      ownerArray,
+      index,
+      removeOnly
+    ) {
+      if (oldVnode === vnode) {
+        return
+      }
+      
+      if (isDef(vnode.elm) && isDef(ownerArray)) {
+        
+        vnode = ownerArray[index] = cloneVNode(vnode);
+      }
+      
+      var elm = vnode.elm = oldVnode.elm;
+      
+      if (isTrue(oldVnode.isAsyncPlaceholder)) {
+        if (isDef(vnode.asyncFactory.resolved)) {
+          hydrate(oldVnode.elm, vnode, insertedVnodeQueue);
+        } else {
+          vnode.isAsyncPlaceholder = true;
+        }
+        return
+      }
+      
+      
+      
+      
+      
+      if (isTrue(vnode.isStatic) &&
+        isTrue(oldVnode.isStatic) &&
+        vnode.key === oldVnode.key &&
+        (isTrue(vnode.isCloned) || isTrue(vnode.isOnce))
+      ) {
+        vnode.componentInstance = oldVnode.componentInstance;
+        return
+      }
+      
+      var i;
+      var data = vnode.data;
+      if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) {
+        i(oldVnode, vnode);
+      }
+      
+      var oldCh = oldVnode.children;
+      var ch = vnode.children;
+      if (isDef(data) && isPatchable(vnode)) {
+        for (i = 0; i < cbs.update.length; ++i) { cbs.update[i](oldVnode, vnode); }
+        if (isDef(i = data.hook) && isDef(i = i.update)) { i(oldVnode, vnode); }
+      }
+      if (isUndef(vnode.text)) {
+        if (isDef(oldCh) && isDef(ch)) {
+          if (oldCh !== ch) { updateChildren(elm, oldCh, ch, insertedVnodeQueue, removeOnly); }
+        } else if (isDef(ch)) {
+          {
+            checkDuplicateKeys(ch);
+          }
+          if (isDef(oldVnode.text)) { nodeOps.setTextContent(elm, ''); }
+          addVnodes(elm, null, ch, 0, ch.length - 1, insertedVnodeQueue);
+        } else if (isDef(oldCh)) {
+          removeVnodes(elm, oldCh, 0, oldCh.length - 1);
+        } else if (isDef(oldVnode.text)) {
+          nodeOps.setTextContent(elm, '');
+        }
+      } else if (oldVnode.text !== vnode.text) {
+        nodeOps.setTextContent(elm, vnode.text);
+      }
+      if (isDef(data)) {
+        if (isDef(i = data.hook) && isDef(i = i.postpatch)) { i(oldVnode, vnode); }
+      }
+    }
+                      
