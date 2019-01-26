@@ -6068,4 +6068,935 @@
         if (isDef(i = data.hook) && isDef(i = i.postpatch)) { i(oldVnode, vnode); }
       }
     }
-                      
+    
+    function invokeInsertHook (vnode, queue, initial) {
+    
+    
+      if (isTrue(initial) && isDef(vnode.parent)) {
+        vnode.parent.data.pendingInsert = queue;
+      } else {
+        for (var i = 0; i < queue.length; ++i) {
+          queue[i].data.hook.insert(queue[i]);
+        }
+      }
+    }
+    
+    var hydrationBailed = false;
+    
+    
+    
+    
+    var isRenderedModule = makeMap('attrs,class,staticClass,staticStyle,key');
+    
+    
+    function hydrate (elm, vnode, insertedVnodeQueue, inVPre) {
+      var i;
+      var tag = vnode.tag;
+      var data = vnode.data;
+      var children = vnode.children;
+      inVPre = inVPre || (data && data.pre);
+      vnode.elm = elm;
+      
+      if (isTrue(vnode.isComment) && isDef(vnode.asyncFactory)) {
+        vnode.isAsyncPlaceholder = true;
+        return true
+      }
+      
+      {
+        if (!assertNodeMatch(elm, vnode, inVPre)) {
+          return false
+        }
+      }
+      if (isDef(data)) {
+        if (isDef(i = data.hook) && isDef(i = i.init)) { i(vnode, true /* hydrating */); }
+        if (isDef(i = vnode.componentInstance)) {
+          
+          initComponent(vnode, insertedVnodeQueue);
+          return true
+        }
+      }
+      if (isDef(tag)) {
+        if (isDef(children)) {
+          
+          if (!elm.hasChildNodes()) {
+            createChildren(vnode, children, insertedVnodeQueue);
+          } else {
+            
+            if (isDef(i = data) && isDef(i = i.domProps) && isDef(i = i.innerHTML)) {
+              if (i !== elm.innerHTML) {
+                
+                if (typeof console !== 'undefined' &&
+                  !hydrationBailed
+                ) {
+                  hydrationBailed = true;
+                  console.warn('Parent: ', elm);
+                  console.warn('server innerHTML: ', i);
+                  console.warn('client innerHTML: ', elm.innerHTML);
+                }
+                return false
+              }
+            } else {
+            
+              var childrenMatch = true;
+              var childNode = elm.firstChild;
+              for (var i$1 = 0; i$1 < children.length; i$1++) {
+                if (!childNode || !hydrate(childNode, children[i$1], insertedVnodeQueue, inVPre)) {
+                  childrenMatch = false;
+                  break
+                }
+                childNode = childNode.nextSibling;
+              }
+              
+              
+              if (!childrenMatch || childNode) {
+                
+                if (typeof console !== 'undefined' &&
+                  !hydrationBailed
+                ) {
+                  hydrationBailed = true;
+                  console.warn('Parent: ', elm);
+                  console.warn('Mismatching childNodes vs. VNodes: ', elm.childNodes, children);
+                }
+                return false
+              }
+            }
+          }
+        }
+        if (isDef(data)) {
+          var fullInvoke = false;
+          for (var key in data) {
+            if (!isRenderedModule(key)) {
+              fullInvoke = true;
+              invokeCreateHooks(vnode, insertedVnodeQueue);
+              break
+            }
+          }
+          if (!fullInvoke && data['class']) {
+            
+            traverse(data['class']);
+          }
+        }
+      } else if (elm.data !== vnode.text) {
+        elm.data = vnode.text;
+      }
+      return true
+    }
+    
+    function assertNodeMatch (node, vnode, inVPre) {
+      if (isDef(vnode.tag)) {
+        return vnode.tag.indexOf('vue-component') === 0 || (
+          !isUnknownElement$$1(vnode, inVPre) &&
+          vnode.tag.toLowerCase() === (node.tagName && node.tagName.toLowerCase())
+        )
+      } else {
+        return node.nodeType === (vnode.isComment ? 8 : 3)
+      }
+    }
+    
+    return function patch (oldVnode, vnode, hydrating, removeOnly) {
+      if (isUndef(vnode)) {
+        if (isDef(oldVnode)) { invokeDestroyHook(oldVnode); }
+        return
+      }
+      
+      var isInitialPatch = false;
+      var insertedVnodeQueue = [];
+      
+      if (isUndef(oldVnode)) {
+        
+        isInitialPatch = true;
+        createElm(vnode, insertedVnodeQueue);
+      } else {
+        var isRealElement = isDef(oldVnode.nodeType);
+        if (!isRealElement && sameVnode(oldVnode, vnode)) {
+          
+          patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly);
+        } else {
+          if (isRealElement) {
+            
+            
+            
+            if (oldVnode.nodeType === 1 && oldVnode.hasAttribute(SSR_ATTR)) {
+              oldVnode.removeAttribute(SSR_ATTR);
+              hydrating = true;
+            }
+            if (isTrue(hydrating)) {
+              if (hydrate(oldVnode, vnode, insertedVnodeQueue)) {
+                invokeInsertHook(vnode, insertedVnodeQueue, true);
+                return oldVnode
+              } else {
+                warn(
+                  'The client-side rendered virtual DOM tree is not matching ' +
+                  'server-rendered content. This is likely caused by incorrect ' +
+                  'HTML markup, for example nesting block-level elements inside ' +
+                  '<p>, or missing <tbody>. Bailing hydration and performing ' +
+                  'full client-side render.'
+                );
+              }
+            }
+            
+            
+            oldVnode = emptyNodeAt(oldVnode);
+          }
+          
+          
+          var oldElm = oldVnode.elm;
+          var parentElm = nodeOps.parentNode(oldElm);
+          
+          
+          createElm(
+            vnode,
+            insertedVnodeQueue,
+            
+            
+            
+            oldElm._leaveCb ? null : parentElm,
+            nodeOps.nextSibling(oldElm)
+          );
+          
+          
+          if (isDef(vnode.parent)) {
+            var ancestor = vnode.parent;
+            var patchable = isPatchable(vnode);
+            while (ancestor) {
+              for (var i = 0; i < cbs.destroy.length; ++i) {
+                cbs.destroy[i](ancestor);
+              }
+              ancestor.elm = vnode.elm;
+              if (patchable) {
+                for (var i$1 = 0; i$1 < cbs.create.length; ++i$1) {
+                  cbs.create[i$1](emptyNode, ancestor);
+                }
+                
+                
+                
+                var insert = ancestor.data.hook.insert;
+                if (insert.merged) {
+                  
+                  for (var i$2 = 1; i$2 < insert.fns.length; i$2++) {
+                    insert.fns[i$2]();
+                  }
+                }
+              } else {
+                registerRef(ancestor);
+              }
+              ancestor = ancestor.parent;
+            }
+          }
+          
+          
+          if (isDef(parentElm)) {
+            removeVnodes(parentElm, [oldVnode], 0, 0);
+          } else if (isDef(oldVnode.tag)) {
+            invokeDestroyHook(oldVnode);
+          }
+        }
+      }
+      
+      invokeInsertHook(vnode, insertedVnodeQueue, isInitialPatch);
+      return vnode.elm
+    }
+  }
+  
+  
+  
+  var directives = {
+    create: updateDirectives,
+    update: updateDirectives,
+    destroy: function unbindDirectives (vnode) {
+      updateDirectives(vnode, emptyNode);
+    }
+  };
+  
+  function updateDirectives (oldVnode, vnode) {
+    if (oldVnode.data.directives || vnode.data.directives) {
+      _update(oldVnode, vnode);
+    }
+  }
+  
+  function _update (oldVnode, vnode) {
+    var isCreate = oldVnode === emptyNode;
+    var isDestroy = vnode === emptyNode;
+    var oldDirs = normalizeDirectives$1(oldVnode.data.directives, oldVnode.context);
+    var newDirs = normalizeDirectives$1(vnode.data.directives, vnode.context);
+    
+    var dirsWithInsert = [];
+    var dirsWithPostpatch = [];
+    
+    var key, oldDir, dir;
+    for (key in newDirs) {
+      oldDir = oldDirs[key];
+      dir = newDirs[key];
+      if (!oldDir) {
+      
+        callHook$1(dir, 'bind', vnode, oldVnode);
+        if (dir.def && dir.def.inserted) {
+          dirsWithInsert.push(dir);
+        }
+      } else {
+      
+        dir.oldValue = oldDir.value;
+        callHook$1(dir, 'update', vnode, oldVnode);
+        if (dir.def && dir.def.componentUpdated) {
+          dirsWithPostpatch.push(dir);
+        }
+      }
+    }
+    
+    if (dirsWithInsert.length) {
+      var callInsert = function () {
+        for (var i = 0; i < dirsWithInsert.length; i++) {
+          callHook$1(dirsWithInsert[i], 'inserted', vnode, oldVnode);
+        }
+      };
+      if (isCreate) {
+        mergeVNodeHook(vnode, 'insert', callInsert);
+      } else {
+        callInsert();
+      }
+    }
+    
+    if (dirsWithPostpatch.length) {
+      mergeVNodeHook(vnode, 'postpatch', function() {
+        for (var i = 0; i < dirsWithPostpatch.length; i++) {
+          callHook$1(dirsWithPostpatch[i], 'componentUpdated', vnode, oldVnode);
+        }
+      });
+    }
+    
+    if (!isCreate) {
+      for (key in oldDirs) {
+        if (!newDirs[key]) {
+        
+          callHook$1(oldDirs[key], 'unbind', oldVnode, oldVnode, isDestroy);
+        }
+      }
+    }
+  }
+  
+  var emptyModifiers = Object.create(null);
+   
+  function normalizeDirectives$1 (
+    dirs,
+    vm
+  ) {
+    var res = Object.create(null);
+    if (!dirs) {
+      
+      return res
+    }
+    var i, dir;
+    for (i = 0; i < dirs.length; i++) {
+      dir = dirs[i];
+      if (!dir.modifiers) {
+      
+        dir.modifiers = emptyModifiers;
+      }
+      res[getRawDirName(dir)] = dir;
+      dir.def = resolveAsset(vm.$options, 'directives', dir.name, true);
+    }
+    
+    return res
+  }
+  
+  function getRawDirName (dir) {
+    return dir.rawName || ((dir.name) + "." + (Object.keys(dir.modifiers || {}).join('.')))
+  }
+  
+  function callHook$1 (dir, hook, vnode, oldVnode, isDestroy) {
+    var fn = dir.def && dir.def[hook];
+    if (fn) {
+      try {
+        fn(vnode.elm, dir, vnode, oldVnode, isDestroy);
+      } catch (e) {
+        handleError(e, vnode.context, ("directive " + (dir.name) + " " + hook + " hook"));
+      }
+    }
+  }
+  
+  var baseModules = [
+    ref,
+    directives
+  ];
+  
+  
+  
+  function updateAttrs (oldVnode, vnode) {
+    var opts = vnode.componentOptions;
+    if (isDef(opts) && opts.Ctor.options.inheritAttrs === false) {
+      return
+    }
+    if (isUndef(oldVnode.data.attrs) && isUndef(vnode.data.attrs)) {
+      return
+    }
+    var key, cur, old;
+    var elm = vnode.elm;
+    var oldAttrs = oldVnode.data.attrs || {};
+    var attrs = vnode.data.attrs || {};
+    
+    if (isDef(attrs.__ob__)) {
+      attrs = vnode.data.attrs = extend({}, attrs);
+    }
+    
+    for (key in attrs) {
+      cur = attrs[key];
+      old = oldAttrs[key];
+      if (old !== cur) {
+        setAttr(elm, key, cur);
+      }
+    }
+    
+    
+    
+    if ((isIE || isEdge) && attrs.value !== oldAttrs.value) {
+      setAttr(elm, 'value', attrs.value);
+    }
+    for (key in oldAttrs) {
+      if (isUndef(attrs[key])) {
+        if (isXlink(key)) {
+          elm.removeAttributeNS(xlinkNS, getXlinkProp(key));
+        } else if (!isEnumeratedAttr(key)) {
+          elm.removeAttribute(key);
+        }
+      }
+    }
+  }
+  
+  function setAttr (el, key, value) {
+    if (el.tagName.indexOf('-') > -1) {
+      baseSetAttr(el, key, value);
+    } else if (isBooleanAttr(key)) {
+      
+      
+      if (isFalsyAttrValue(value)) {
+        el.removeAttribute(key);
+      } else {
+        
+        
+        value = key === 'allowfullscreen' && el.tagName === 'EMBED'
+          ? 'true'
+          : key;
+        el.setAttribute(key, value);
+      }
+    } else if (isEnumeratedAttr(key)) {
+      el.setAttribute(key, isFalsyAttrValue(value) || value === 'false' ? 'false' : 'true');
+    } else if (isXlink(key)) {
+      if (isFalsyAttrValue(value)) {
+        el.removeAttributeNS(xlinkNS, getXlinkProp(key));
+      } else {
+        el.setAttributeNS(xlinkNS, key, value);
+      }
+    } else {
+      baseSetAttr(el, key, value);
+    }
+  }
+  
+  function baseSetAttr (el, key, value) {
+    if (isFalsyAttrValue(value)) {
+      el.removeAttribute(key);
+    } else {
+    
+    
+    
+    
+      if (
+        isIE && !isIE9 &&
+        (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') &&
+        key === 'placeholder' && !el.__ieph
+      ) {
+        var blocker = function (e) {
+          e.stopImmediatePropagation();
+          el.removeEventListener('input', blocker);
+        };
+        el.addEventListener('input', blocker);
+        
+        el.__ieph = true; /* IE placeholder patched */
+      }
+      el.setAttribute(key, value);
+    }
+  }
+  
+  var attrs = {
+    create: updateAttrs,
+    update: updateAttrs
+  };
+  
+  
+  
+  function updateClass (oldVnode, vnode) {
+    var el = vnode.elm;
+    var data = vnode.data;
+    var oldData = oldVnode.data;
+    if (
+      isUndef(data.staticClass) &&
+      isUndef(data.class) && (
+        isUndef(oldData) || (
+          isUndef(oldData.staticClass) &&
+          isUndef(oldData.class)
+        )
+      )
+    ) {
+      return
+    }
+    
+    var cls = genClassForVnode(vnode);
+    
+    
+    var transitionClass = el._transitionClasses;
+    if (isDef(transitionClass)) {
+      cls = concat(cls, stringifyClass(transitionClass));
+    }
+    
+    
+    if (cls !== el._prevClass) {
+      el.setAttribute('class', cls);
+      el._prevClass = cls;
+    }
+  }
+  
+  var klass = {
+    create: updateClass,
+    update: updateClass
+  };
+  
+  
+  
+  var validDivisionCharRE = /[\w).+\-_$\]]/;
+  
+  function parseFilters (exp) {
+    var inSingle = false;
+    var inDouble = false;
+    var inTemplateString = false;
+    var inRegex = false;
+    var curly = 0;
+    var square = 0;
+    var paren = 0;
+    var lastFilterIndex = 0;
+    var c, prev, i, expression, filters;
+    
+    for (i = 0; i < exp.length; i++) {
+      prev = c;
+      c = exp.charCodeAt(i);
+      if (inSingle) {
+        if (c === 0x27 && prev !== 0x5C) { inSingle = false; }
+      } else if (inDouble) {
+        if (c === 0x22 && prev !== 0x5C) { inDouble = false; }
+      } else if (inTemplateString) {
+        if (c === 0x60 && prev !== 0x5C) { inTemplateString = false; }
+      } else if (inRegex) {
+        if (c === 0x2f && prev !== 0x5C) { inRegex = false; }
+      } else if (
+        c === 0x7C && // pipe
+        exp.charCodeAt(i + 1) !== 0x7C &&
+        exp.charCodeAt(i - 1) !== 0x7C &&
+        !curly && !square && !paren
+      ) {
+        if (expression === undefined) {
+          
+          lastFilterIndex = i + 1;
+          expression = exp.slice(0, i).trim();
+        } else {
+          pushFilter();
+        }
+      } else {
+        switch (c) {
+          case 0x22: inDouble = true; break         // "
+          case 0x27: inSingle = true; break         // '
+          case 0x60: inTemplateString = true; break // `
+          case 0x28: paren++; break                 // (
+          case 0x29: paren--; break                 // )
+          case 0x5B: square++; break                // [
+          case 0x5D: square--; break                // ]
+          case 0x7B: curly++; break                 // {
+          case 0x7D: curly--; break                 // }
+        }
+        if (c === 0x2f) { // /
+          var j = i - 1;
+          var p = (void 0);
+          
+          for (; j >= 0; j--) {
+            p = exp.charAt(j);
+            if (p !== ' ') { break }
+          }
+          if (!p || !validDivisionCharRE.test(p)) {
+            inRegex = true;
+          }
+        }
+      }
+    }
+    
+    if (expression === undefined) {
+      expression = exp.slice(0, i).trim();
+    } else if (lastFilterIndex !== 0) {
+      pushFilter();
+    }
+    
+    function pushFilter () {
+      (filters || (filters = [])).push(exp.slice(lastFilterIndex, i).trim());
+      lastFilterIndex = i + 1;
+    }
+      
+    if (filters) {
+      for (i = 0; i < filters.length; i++) {
+        expression = wrapFilter(expression, filters[i]);
+      }
+    }
+    
+    return expression
+  }
+  
+  function wrapFilter (exp, filter) {
+    var i = filter.indexOf('(');
+    if (i < 0) {
+      
+      return ("_f(\"" + filter + "\")(" + exp + ")")
+    } else {
+      var name = filter.slice(0, i);
+      var args = filter.slice(i + 1);
+      return ("_f(\"" + name + "\")(" + exp + (args !== ')' ? ',' + args : args))
+    }
+  }
+  
+  
+  
+  
+  
+  
+  function baseWarn (msg, range) {
+    console.error(("[Vue compiler]: " + msg));
+  }
+  
+  
+  function pluckModuleFunction (
+    modules,
+    key
+  ) {
+    return modules
+      ? modules.map(function (m) { return m[key]; }).filter(function (_) { return _; })
+      : []
+  }
+  
+  function addProp (el, name, value, range) {
+    (el.props || (el.props = [])).push(rangeSetItem({ name: name, value: value }, range));
+    el.plain = false;
+  }
+  
+  function addAttr (el, name, value, range) {
+    (el.attrs || (el.attrs = [])).push(rangeSetItem({ name: name, value: value }, range));
+    el.plain = false;
+  }
+  
+  
+  function addRawAttr (el, name, value, range) {
+    el.attrsMap[name] = value;
+    el.attrsList.push(rangeSetItem({ name: name, value: value }, range));
+  }
+  
+  function addDirective (
+    el,
+    name,
+    rawName,
+    value,
+    arg,
+    modifiers,
+    range
+  ) {
+    (el.directives || (el.directives = [])).push(rangeSetItem({ name: name, rawName: rawName, value: value, arg: arg, modifiers: modifiers }, range));
+    el.plain = false;
+  }
+  
+  function addHandler (
+    el,
+    name,
+    value,
+    modifiers,
+    important,
+    warn,
+    range
+  ) {
+    modifiers = modifiers || emptyObject;
+    
+    
+    if (
+      warn &&
+      modifiers.prevent && modifiers.passive
+    ) {
+      warn(
+        'passive and prevent can\'t be used together. ' +
+        'Passive handler can\'t prevent default event.',
+        range
+      );
+    }
+    
+    
+    
+    
+    if (name === 'click') {
+      if (modifiers.right) {
+        name = 'contextmenu';
+        delete modifiers.right;
+      } else if (modifiers.middle) {
+        name = 'mouseup';
+      }
+    }
+    
+    
+    if (modifiers.capture) {
+      delete modifiers.capture;
+      name = '!' + name; // mark the event as captured
+    }
+    if (modifiers.once) {
+      delete modifiers.once;
+      name = '~' + name; // mark the event as once
+    }
+      
+    if (modifiers.passive) {
+      delete modifiers.passive;
+      name = '&' + name; // mark the event as passive
+    }
+    
+    var events;
+    if (modifiers.native) {
+      delete modifiers.native;
+      events = el.nativeEvents || (el.nativeEvents = {});
+    } else {
+      events = el.events || (el.events = {});
+    }
+    
+    var newHandler = rangeSetItem({ value: value.trim() }, range);
+    if (modifiers !== emptyObject) {
+      newHandler.modifiers = modifiers;
+    }
+    
+    var handlers = events[name];
+    
+    if (Array.isArray(handlers)) {
+      important ? handlers.unshift(newHandler) : handlers.push(newHandler);
+    } else if (handlers) {
+      events[name] = important ? [newHandler, handlers] : [handlers, newHandler];
+    } else {
+      events[name] = newHandler;
+    }
+    
+    el.plain = false;
+  }
+  
+  function getRawBindingAttr (
+    el,
+    name
+  ) {
+    return el.rawAttrsMap[':' + name] ||
+      el.rawAttrsMap['v-bind:' + name] ||
+      el.rawAttrsMap[name]
+  }
+  
+  function getBindingAttr (
+    el,
+    name,
+    getStatic
+  ) {
+    var dynamicValue =
+      getAndRemoveAttr(el, ':' + name) ||
+      getAndRemoveAttr(el, 'v-bind:' + name);
+    if (dynamicValue != null) {
+      return parseFilters(dynamicValue)
+    } else if (getStatic !== false) {
+      var staticValue = getAndRemoveAttr(el, name);
+      if (staticValue != null) {
+        return JSON.stringify(staticValue)
+      }
+    }
+  }
+  
+  
+  
+  
+  
+  function getAndRemoveAttr (
+    el,
+    name,
+    removeFromMap
+  ) {
+    var val;
+    if ((val = el.attrsMap[name]) != null) {
+      var list = el.attrsList;
+      for (var i = 0, l = list.length; i < l; i++) {
+        if (list[i].name === name) {
+          list.splice(i, 1);
+          break
+        }
+      }
+    }
+    if (removeFromMap) {
+      delete el.attrsMap[name];
+    }
+    return val
+  }
+  
+  function rangeSetItem (
+    item,
+    range
+  ) {
+    if (range) {
+      if (range.start != null) {
+        item.start = range.start;
+      }
+      if (range.end != null) {
+        item.end = range.end;
+      }
+    }
+    return item
+  }
+  
+  
+  
+  
+  
+  
+  function genComponentModel (
+    el,
+    value,
+    modifiers
+  ) {
+    var ref = modifiers || {};
+    var number = ref.number;
+    var trim = ref.trim;
+    
+    var baseValueExpression = '$$v';
+    var valueExpression = baseValueExpression;
+    if (trim) {
+      valueExpression = 
+        "(typeof " + baseValueExpression + " === 'string'" +
+        "? " + baseValueExpression + ".trim()" +
+        ": " + baseValueExpression + ")";
+    }
+    if (number) {
+      valueExpression = "_n(" + valueExpression + ")";
+    }
+    var assignment = genAssignmentCode(value, valueExpression);
+    
+    el.model = {
+      value: ("(" + value + ")"),
+      expression: JSON.stringify(value),
+      callback: ("function (" + baseValueExpression + ") {" + assignment + "}")
+    };
+  }
+  
+  
+  
+  
+  function genAssignmentCode (
+    value,
+    assignment
+  ) {
+    var res = parseModel(value);
+    if (res.key === null) {
+      return (value + "=" + assignment)
+    } else {
+      return ("$set(" + (res.exp) + ", " + (res.key) + ", " + assignment + ")")
+    }
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  var len, str, chr, index$1, expressionPos, expressionEndPos;
+  
+  
+  
+  function parseModel (val) {
+    
+    
+    val = val.trim();
+    len = val.length;
+    
+    if (val.indexOf('[') < 0 || val.lastIndexOf(']') < len - 1) {
+      index$1 = val.lastIndexOf('.');
+      if (index$1 > -1) {
+        return {
+          exp: val.slice(0, index$1),
+          key: '"' + val.slice(index$1 + 1) + '"'
+        }
+      } else {
+        return {
+          exp: val,
+          key: null
+        }
+      }
+    }
+    
+    str = val;
+    index$1 = expressionPos = expressionEndPos = 0;
+    
+    while (!eof()) {
+      chr = next();
+      
+      if (isStringStart(chr)) {
+        parseString(chr);
+      } else if (chr === 0x5B) {
+        parseBracket(chr);
+      }
+    }
+    
+    return {
+      exp: val.slice(0, expressionPos),
+      key: val.slice(expressionPos + 1, expressionEndPos)
+    }
+  }
+  
+  function next () {
+    return str.charCodeAt(++index$1)
+  }
+  
+  function eof () {
+    return index$1 >= len
+  }
+  
+  function isStringStart (chr) {
+    return chr === 0x22 || chr === 0x27
+  }
+  
+  function parseBracket (chr) {
+    var inBracket = 1;
+    expressionPos = index$1;
+    while (!eof()) {
+      chr = next();
+      if (isStringStart(chr)) {
+        parseString(chr);
+        continue
+      }
+      if (chr === 0x5B) { inBracket++; }
+      if (chr === 0x5D) { inBracket--; }
+      if (inBracket === 0) {
+        expressionEndPos = index$1;
+        break
+      }
+    }
+  }
+  
+  function parseString (chr) {
+    var stringQuote = chr;
+    while (!eof()) {
+      chr = next();
+      if (chr === stringQuote) {
+        break
+      }
+    }
+  }
+  
+  
+  
+  var warn$1;
+                    
