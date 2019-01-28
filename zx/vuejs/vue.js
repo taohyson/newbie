@@ -7057,4 +7057,592 @@
     
     return true
   }
+  
+  function genCheckboxModel (
+    el,
+    value,
+    modifiers
+  ) {
+    var number = modifiers && modifiers.number;
+    var valueBinding = getBindingAttr(el, 'value') || 'null';
+    var trueValueBinding = getBindingAttr(el, 'true-value') || 'true';
+    var falseValueBinding = getBindingAttr(el, 'false-value') || 'false';
+    addProp(el, 'checked',
+      "Array.isArray(" + value + ")" +
+      "?_i(" + value + "," + valueBinding + ")>-1" + (
+        trueValueBinding === 'true'
+          ? (":(" + value + ")")
+          : (":_q(" + value + "," + trueValueBinding + ")")
+      )
+    );
+    addHandler(el, 'change',
+      "var $$a=" + value + "," +
+           '$$el=$event.target,' +
+           "$$c=$$el.checked?(" + trueValueBinding + "):(" + falseValueBinding + ");" +
+      'if(Array.isArray($$a)){' +
+        "var $$v=" + (number ? '_n(' + valueBinding + ')' : valueBinding) + "," +
+            '$$i=_i($$a,$$v);' +
+        "if($$el.checked){$$i<0&&(" + (genAssignmentCode(value, '$$a.concat([$$v])')) + ")}" +
+        "else{$$i>-1&&(" + (genAssignmentCode(value, '$$a.slice(0,$$i).concat($$a.slice($$i+1))')) + ")}" +
+      "}else{" + (genAssignmentCode(value, '$$c')) + "}",
+      null, true
+    );
+  }
+  
+  function genRadioModel (
+    el,
+    value,
+    modifiers
+  ) {
+    var number = modifiers && modifiers.number;
+    var valueBinding = getBindingAttr(el, 'value') || 'null';
+    valueBinding = number ? ("_n(" + valueBinding + ")") : valueBinding;
+    addProp(el, 'checked', ("_q(" + value + "," + valueBinding + ")"));
+    addHandler(el, 'change', genAssignmentCode(value, valueBinding), null, true);
+  }
+  
+  function genSelect (
+    el,
+    value,
+    modifiers
+  ) {
+    var number = modifiers && modifiers.number;
+    var selectedVal = "Array.prototype.filter" +
+      ".call($event.target.options,function(o){return o.selected})" +
+      ".map(function(o){var val = \"_value\" in o ? o._value : o.value;" +
+      "return " + (number ? '_n(val)' : 'val') + "})";
+      
+    var assignment = '$event.target.multiple ? $$selectedVal : $$selectedVal[0]';
+    var code = "var $$selectedVal = " + selectedVal + ";";
+    code = code + " " + (genAssignmentCode(value, assignment));
+    addHandler(el, 'change', code, null, true);
+  }
+  
+  function genDefaultModel (
+    el,
+    value,
+    modifiers
+  ) {
+    var type = el.attrsMap.type;
+    
+    
+    
+    {
+      var value$1 = el.attrsMap['v-bind:value'] || el.attrsMap[':value'];
+      var typeBinding = el.attrsMap['v-bind:type'] || el.attrsMap[':type'];
+      if (value$1 && !typeBinding) {
+        var binding = el.attrsMap['v-bind:value'] ? 'v-bind:value' : ':value';
+        warn$1(
+          binding + "=\"" + value$1 + "\" conflicts with v-model on the same element " +
+          'because the latter already expands to a value binding internally',
+          el.rawAttrsMap[binding]
+        );
+      }
+    }
+    
+    var ref = modifiers || {};
+    var lazy = ref.lazy;
+    var number = ref.number;
+    var trim = ref.trim;
+    var needCompositionGuard = !lazy && type !== 'range';
+    var event = lazy
+      ? 'change'
+      : type === 'range'
+        ? RANGE_TOKEN
+        : 'input';
+        
+    var valueExpression = '$event.target.value';
+    if (trim) {
+      valueExpression = "$event.target.value.trim()";
+    }
+    if (number) {
+      valueExpression = "_n(" + valueExpression + ")";
+    }
+    
+    var code = genAssignmentCode(value, valueExpression);
+    if (needCompositionGuard) {
+      code = "if($event.target.composing)return;" + code;
+    }
+    
+    addProp(el, 'value', ("(" + value + ")"));
+    addHandler(el, event, code, null, true);
+    if (trim || number) {
+      addHandler(el, 'blur', '$forceUpdate()');
+    }
+  }
+  
+  
+  
+  
+  
+  
+  
+  function normalizeEvents (on) {
+  
+    if (isDef(on[RANGE_TOKEN])) {
+      
+      var event = isIE ? 'change' : 'input';
+      on[event] = [].concat(on[RANGE_TOKEN], on[event] || []);
+      delete on[RANGE_TOKEN];
+    }
+    
+    
+    
+    if (isDef(on[CHECKBOX_RADIO_TOKEN])) {
+      on.change = [].concat(on[CHECKBOX_RADIO_TOKEN], on.change || []);
+      delete on[CHECKBOX_RADIO_TOKEN];
+    }
+  }
+  
+  var target$1;
+  
+  function createOnceHandler$1 (event, handler, capture) {
+    var _target = target$1; // save current target element in closure
+    return function onceHandler () {
+      var res = handler.apply(null, arguments);
+      if (res !== null) {
+        remove$2(event, onceHandler, capture, _target);
+      }
+    }
+  }
+  
+  function add$1 (
+    name,
+    handler,
+    capture,
+    passive
+  ) {
+    if (isChrome) {
+    
+    
+    
+    
+    
+    
+      var now = performance.now();
+      var original = handler;
+      handler = original._wrapper = function (e) {
+        if (e.timeStamp >= now) {
+          return original.apply(this, arguments)
+        }
+      };
+    }
+    target$1.addEventListener(
+      name,
+      handler,
+      supportsPassive
+        ? { capture: capture, passive: passive }
+        : capture
+    );
+  }
+  
+  function remove$2 (
+    name,
+    handler,
+    capture,
+    _target
+  ) {
+    (_target || target$1).removeEventListener(
+      name,
+      handler._wrapper || handler,
+      capture
+    );
+  }
+  
+  function updateDOMListeners (oldVnode, vnode) {
+    if (isUndef(oldVnode.data.on) && isUndef(vnode.data.on)) {
+      return
+    }
+    var on = vnode.data.on || {};
+    var oldOn = oldVnode.data.on || {};
+    target$1 = vnode.elm;
+    normalizeEvents(on);
+    updateListeners(on, oldOn, add$1, remove$2, createOnceHandler$1, vnode.context);
+    target$1 = undefined;
+  }
+  
+  var events = {
+    create: updateDOMListeners,
+    update: updateDOMListeners
+  };
+  
+  
+  
+  var svgContainer;
+  
+  function updateDOMProps (oldVnode, vnode) {
+    if (isUndef(oldVnode.data.domProps) && isUndef(vnode.data.domProps)) {
+      return
+    }
+    var key, cur;
+    var elm = vnode.elm;
+    var oldProps = oldVnode.data.domProps || {};
+    var props = vnode.data.domProps || {};
+    
+    if (isDef(props.__ob__)) {
+      props = vnode.data.domProps = extend({}, props);
+    }
+    
+    for (key in oldProps) {
+      if (isUndef(props[key])) {
+        elm[key] = '';
+      }
+    }
+    for (key in props) {
+      cur = props[key];
+      
+      
+      
+      if (key === 'textContent' || key === 'innerHTML') {
+        if (vnode.children) { vnode.children.length = 0; }
+        if (cur === oldProps[key]) { continue }
+        
+        
+        if (elm.childNodes.length === 1) {
+          elm.removeChild(elm.childNodes[0]);
+        }
+      }
+      
+      
+      
+      
+      
+      
+      
+      
+      if (key === 'checked' && !isNotInFocusAndDirty(elm, cur)) {
+        continue
+      }
+      
+      if (key === 'value') {
+      
+      
+        elm._value = cur;
+        
+        var strCur = isUndef(cur) ? '' : String(cur);
+        if (shouldUpdateValue(elm, strCur)) {
+          elm.value = strCur;
+        }
+      } else if (key === 'innerHTML' && isSVG(elm.tagName) && isUndef(elm.innerHTML)) {
+        
+        svgContainer = svgContainer || document.createElement('div');
+        svgContainer.innerHTML = "<svg>" + cur + "</svg>";
+        var svg = svgContainer.firstChild;
+        while (elm.firstChild) {
+          elm.removeChild(elm.firstChild);
+        }
+        while (svg.firstChild) {
+          elm.appendChild(svg.firstChild);
+        }
+      } else {
+        elm[key] = cur;
+      }
+    }
+  }
+  
+  // check platforms/web/util/attrs.js acceptValue
+  
+  
+  function shouldUpdateValue (elm, checkVal) {
+    return (!elm.composing && (
+      elm.tagName === 'OPTION' ||
+      isNotInFocusAndDirty(elm, checkVal) ||
+      isDirtyWithModifiers(elm, checkVal)
+    ))
+  }
+  
+  function isNotInFocusAndDirty (elm, checkVal) {
+    
+    
+    var notInFocus = true;
+    
+    
+    try { notInFocus = document.activeElement !== elm; } catch (e) {}
+    return notInFocus && elm.value !== checkVal
+  }
+  
+  function isDirtyWithModifiers (elm, newVal) {
+    var value = elm.value;
+    var modifiers = elm._vModifiers; // injected by v-model runtime
+    if (isDef(modifiers)) {
+      if (modifiers.number) {
+        return toNumber(value) !== toNumber(newVal)
+      }
+      if (modifiers.trim) {
+        return value.trim() !== newVal.trim()
+      }
+    }
+    return value !== newVal
+  }
+  
+  var domProps = {
+    create: updateDOMProps,
+    update: updateDOMProps
+  };
+  
+  
+  
+  var parseStyleText = cached(function (cssText) {
+    var res = {};
+    var listDelimiter = /;(?![^(]*\))/g;
+    var propertyDelimiter = /:(.+)/;
+    cssText.split(listDelimiter).forEach(function (item) {
+      if (item) {
+        var tmp = item.split(propertyDelimiter);
+        tmp.length > 1 && (res[tmp[0].trim()] = tmp[1].trim());
+      }
+    });
+    return res
+  });
+  
+  
+  function normalizeStyleData (data) {
+    var style = normalizeStyleBinding(data.style);
+    
+    
+    return data.staticStyle
+      ? extend(data.staticStyle, style)
+      : style
+  }
+  
+  
+  function normalizeStyleBinding (bindingStyle) {
+    if (Array.isArray(bindingStyle)) {
+      return toObject(bindingStyle)
+    }
+    if (typeof bindingStyle === 'string') {
+      return parseStyleText(bindingStyle)
+    }
+    return bindingStyle
+  }
+  
+  
+  
+  
+  
+  function getStyle (vnode, checkChild) {
+    var res = {};
+    var styleData;
+    
+    if (checkChild) {
+      var childNode = vnode;
+      while (childNode.componentInstance) {
+        childNode = childNode.componentInstance._vnode;
+        if (
+          childNode && childNode.data &&
+          (styleData = normalizeStyleData(childNode.data))
+        ) {
+          extend(res, styleData);
+        }
+      }
+    }
+    
+    if ((styleData = normalizeStyleData(vnode.data))) {
+      extend(res, styleData);
+    }
+    
+    var parentNode = vnode;
+    while ((parentNode = parentNode.parent)) {
+      if (parentNode.data && (styleData = normalizeStyleData(parentNode.data))) {
+        extend(res, styleData);
+      }
+    }
+    return res
+  }
+  
+  
+  
+  var cssVarRE = /^--/;
+  var importantRE = /\s*!important$/;
+  var setProp = function (el, name, val) {
+    
+    if (cssVarRE.test(name)) {
+      el.style.setProperty(name, val);
+    } else if (importantRE.test(val)) {
+      el.style.setProperty(name, val.replace(importantRE, ''), 'important');
+    } else {
+      var normalizedName = normalize(name);
+      if (Array.isArray(val)) {
+      
+      
+      
+        for (var i = 0, len = val.length; i < len; i++) {
+          el.style[normalizedName] = val[i];
+        }
+      } else {
+        el.style[normalizedName] = val;
+      }
+    }
+  };
+  
+  var vendorNames = ['Webkit', 'Moz', 'ms'];
+  
+  var emptyStyle;
+  var normalize = cached(function (prop) {
+    emptyStyle = emptyStyle || document.createElement('div').style;
+    prop = camelize(prop);
+    if (prop !== 'filter' && (prop in emptyStyle)) {
+      return prop
+    }
+    var capName = prop.charAt(0).toUpperCase() + prop.slice(1);
+    for (var i = 0; i < vendorNames.length; i++) {
+      var name = vendorNames[i] + capName;
+      if (name in emptyStyle) {
+        return name
+      }
+    }
+  });
+  
+  function updateStyle (oldVnode, vnode) {
+    var data = vnode.data;
+    var oldData = oldVnode.data;
+    
+    if (isUndef(data.staticStyle) && isUndef(data.style) &&
+      isUndef(oldData.staticStyle) && isUndef(oldData.style)
+    ) {
+      return
+    }
+    
+    var cur, name;
+    var el = vnode.elm;
+    var oldStaticStyle = oldData.staticStyle;
+    var oldStyleBinding = oldData.normalizedStyle || oldData.style || {};
+    
+    
+    var oldStyle = oldStaticStyle || oldStyleBinding;
+    
+    var style = normalizeStyleBinding(vnode.data.style) || {};
+    
+    
+    
+    
+    vnode.data.normalizedStyle = isDef(style.__ob__)
+      ? extend({}, style)
+      : style;
+      
+    var newStyle = getStyle(vnode, true);
+    
+    for (name in oldStyle) {
+      if (isUndef(newStyle[name])) {
+        setProp(el, name, '');
+      }
+    }
+    for (name in newStyle) {
+      cur = newStyle[name];
+      if (cur !== oldStyle[name]) {
+        
+        setProp(el, name, cur == null ? '' : cur);
+      }
+    }
+  }
+  
+  var style = {
+    create: updateStyle,
+    update: updateStyle
+  };
+  
+  
+  
+  var whitespaceRE = /\s+/;
+  
+  
+  
+  
+  
+  function addClass (el, cls) {
+    
+    if (!cls || !(cls = cls.trim())) {
+      return
+    }
+    
+    
+    if (el.classList) {
+      if (cls.indexOf(' ') > -1) {
+        cls.split(whitespaceRE).forEach(function (c) { return el.classList.add(c); });
+      } else {
+        el.classList.add(cls);
+      }
+    } else {
+      var cur = " " + (el.getAttribute('class') || '') + " ";
+      if (cur.indexOf(' ' + cls + ' ') < 0) {
+        el.setAttribute('class', (cur + cls).trim());
+      }
+    }
+  }
+  
+  
+  
+  
+  
+  function removeClass (el, cls) {
+    
+    if (!cls || !(cls = cls.trim())) {
+      return
+    }
+    
+    
+    if (el.classList) {
+      if (cls.indexOf(' ') > -1) {
+        cls.split(whitespaceRE).forEach(function (c) { return el.classList.remove(c); } );
+      } else {
+        el.classList.remove(cls);
+      }
+      if (!el.classList.length) {
+        el.removeAttribute('class');
+      }
+    } else {
+      var cur = " " + (el.getAttribute('class') || '') + " ";
+      var tar = ' ' + cls + ' ';
+      while (cur.indexOf(tar) >= 0) {
+        cur = cur.replace(tar, ' ');
+      }
+      cur = cur.trim();
+      if (cur) {
+        el.setAttribute('class', cur);
+      } else {
+        el.removeAttribute('class');
+      }
+    }
+  }
+  
+  
+  
+  function resolveTransition (def$$1) {
+    if (!def$$1) {
+      return
+    }
+    
+    if (typeof def$$1 === 'object') {
+      var res = {};
+      if (def$$1.css !== false) {
+        extend(res, autoCssTransition(def$$1.name || 'v'));
+      }
+      extend(res, def$$1);
+      return res
+    } else if (typeof def$$1 === 'string') {
+      return autoCssTransition(def$$1)
+    }
+  }
+  
+  var autoCssTransition = cached(function (name) {
+    return {
+      enterClass: (name + "-enter"),
+      enterToClass: (name + "-enter-to"),
+      enterActiveClass: (name + "-enter-active"),
+      leaveClass: (name + "-leave"),
+      leaveToClass: (name + "-leave-to"),
+      leaveActiveClass: (name + "-leave-active")
+    }
+  });
+  
+  var hasTransition = inBrowser && !isIE9;
+  var TRANSITION = 'transition';
+  var ANIMATION = 'animation';
+  
+  
+  var transitionProp = 'transition';
+  var transitionEndEvent = 'transitionend';
+  var animationProp = 'animation';
+  var animationEndEvent = 'animationend';                      
+  }
                               
