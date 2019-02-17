@@ -8046,3 +8046,622 @@
       }
     }
   }
+  
+  
+  function checkDuration (val, name, vnode) {
+    if (typeof val !== 'number') {
+      warn(
+        "<transition> explicit " + name + " duration is not a valid number - " +
+        "got " + (JSON.stringify(val)) + ".",
+        vnode.context
+      );
+    } else if (isNaN(val)) {
+      warn(
+        "<transition> explicit " + name + " duration is NaN - " +
+        'the duration expression might be incorrect.',
+        vnode.context
+      );
+    }
+  }
+  
+  function isValidDuration (val) {
+    return typeof val === 'number' && !isNaN(val)
+  }
+  
+  
+  
+  
+  
+  
+  
+  function getHookArgumentsLength (fn) {
+    if (isUndef(fn)) {
+      return false
+    }
+    var invokerFns = fn.fns;
+    if (isDef(invokerFns)) {
+    
+      return getHookArgumentsLength(
+        Array.isArray(invokerFns)
+          ? invokerFns[0]
+          : invokerFns
+      )
+    } else {
+      return (fn._length || fn.length) > 1
+    }
+  }
+  
+  function _enter (_, vnode) {
+    if (vnode.data.show !== true) {
+      enter(vnode);
+    }
+  }
+  
+  var transition = inBrowser ? {
+    create: _enter,
+    activate: _enter,
+    remove: function remove$$1 (vnode, rm) {
+      
+      if (vnode.data.show !== true) {
+        leave(vnode, rm);
+      } else {
+        rm();
+      }
+    }
+  } : {};
+  
+  var platformModules = [
+    attrs,
+    klass,
+    events,
+    domProps,
+    style,
+    transition
+  ];
+  
+  
+  
+  
+  
+  var modules = platformModules.concat(baseModules);
+  
+  var patch = createPatchFunction({ nodeOps: nodeOps, modules: modules });
+  
+  
+  
+  
+  
+  
+  
+  if (isIE9) {
+    
+    document.addEventListener('selectionchange', function () {
+      var el = document.activeElement;
+      if (el && el.vmodel) {
+        trigger(el, 'input');
+      }
+    });
+  }
+  
+  var directive = {
+    inserted: function inserted (el, binding, vnode, oldVnode) {
+      if (vnode.tag === 'select') {
+        
+        if (oldVnode.elm && !oldVnode.elm._vOptions) {
+          mergeVNodeHook(vnode, 'postpatch', function () {
+            directive.componentUpdated(el, binding, vnode);
+          });
+        } else {
+          setSelected(el, binding, vnode.context);
+        }
+        el._vOptions = [].map.call(el.options, getValue);
+      } else if (vnode.tag === 'textarea' || isTextInputType(el.type)) {
+        el._vModifiers = binding.modifiers;
+        if (!binding.modifiers.lazy) {
+          el.addEventListener('compositionstart', onCompositionStart);
+          el.addEventListener('compositionend', onCompositionEnd);
+          
+          
+          
+          
+          el.addEventListener('change', onCompositionEnd);
+          
+          if (isIE9) {
+            el.vmodel = true;
+          }
+        }
+      }
+    },
+    
+    componentUpdated: function componentUpdated (el, binding, vnode) {
+      if (vnode.tag === 'select') {
+        setSelected(el, binding, vnode.context);
+        
+        
+        
+        
+        var prevOptions = el._vOptions;
+        var curOptions = el._vOptions = [].map.call(el.options, getValue);
+        if (curOptions.some(function (o, i) { return !looseEqual(o, prevOptions[i]); })) {
+        
+        
+          var needReset = el.multiple
+            ? binding.value.some(function (v) { return hasNoMatchingOption(v, curOptions); })
+            : binding.value !== binding.oldValue && hasNoMatchingOption(binding.value, curOptions);
+          if (needReset) {
+            trigger(el, 'change');
+          }
+        }
+      }
+    }
+  };
+  
+  function setSelected (el, binding, vm) {
+    actuallySetSelected(el, binding, vm);
+    
+    if (isIE || isEdge) {
+      setTimeout(function () {
+        actuallySetSelected(el, binding, vm);
+      }, 0);
+    }
+  }
+  
+  function actuallySetSelected (el, binding, vm) {
+    var value = binding.value;
+    var isMultiple = el.multiple;
+    if (isMultiple && !Array.isArray(value)) {
+      warn(
+        "<select multiple v-model=\"" + (binding.expression) + "\"> " +
+        "expects an Array value for its binding, but got " + (Object.prototype.toString.call(value).slice(8, -1)),
+        vm
+      );
+      return
+    }
+    var selected, option;
+    for (var i = 0, l = el.options.length; i < l; i++) {
+      option = el.options[i];
+      if (isMultiple) {
+        selected = looseIndexOf(value, getValue(option)) > -1;
+        if (option.selected !== selected) {
+          option.selected = selected;
+        }
+      } else {
+        if (looseEqual(getValue(option), value)) {
+          if (el.selectedIndex !== i) {
+            el.selectedIndex = i;
+          }
+          return
+        }
+      }
+    }
+    if (!isMultiple) {
+      el.selectedIndex = -1;
+    }
+  }
+  
+  function hasNoMatchingOption (value, options) {
+    return options.every(function (o) { return !looseEqual(o, value); })
+  }
+  
+  function getValue (option) {
+    return '_value' in option
+      ? option._value
+      : option.value
+  }
+  
+  function onCompositionStart (e) {
+    e.target.composing = true;
+  }
+  
+  function onCompositionEnd (e) {
+    
+    if (!e.target.composing) { return }
+    e.target.composing = false;
+    trigger(e.target, 'input');
+  }
+  
+  function trigger (el, type) {
+    var e = document.createEvent('HTMLEvents');
+    e.initEvent(type, true, true);
+    el.dispatchEvent(e);
+  }
+  
+  
+  
+  
+  function locateNode (vnode) {
+    return vnode.componentInstance && (!vnode.data || !vnode.data.transition)
+      ? locateNode(vnode.componentInstance._vnode)
+      : vnode
+  }
+  
+  var show = {
+    bind: function bind (el, ref, vnode) {
+      var value = ref.value;
+      
+      vnode = locateNode(vnode);
+      var transition$$1 = vnode.data && vnode.data.transition;
+      var originalDisplay = el.__vOriginalDisplay =
+        el.style.display === 'none' ? '' : el.style.display;
+      if (value && transition$$1) {
+        vnode.data.show = true;
+        enter(vnode, function () {
+          el.style.display = originalDisplay;
+        });
+      } else {
+        el.style.display = value ? originalDisplay : 'none';
+      }
+    },
+    
+    update: function update (el, ref, vnode) {
+      var value = ref.value;
+      var oldValue = ref.oldValue;
+      
+      
+      if (!value === !oldValue) { return }
+      vnode = locateNode(vnode);
+      var transition$$1 = vnode.data && vnode.data.transition;
+      if (transition$$1) {
+        vnode.data.show = true;
+        if (value) {
+          enter(vnode, function () {
+            el.style.display = el.__vOriginalDisplay;
+          });
+        } else {
+          leave(vnode, function () {
+            el.style.display = 'none';
+          });
+        }
+      } else {
+        el.style.display = value ? el.__vOriginalDisplay : 'none';
+      }
+    },
+    
+    unbind: function unbind (
+      el,
+      binding,
+      vnode,
+      oldVnode,
+      isDestroy
+    ) {
+      if (!isDestroy) {
+        el.style.display = el.__vOriginalDisplay;
+      }
+    }
+  };
+  
+  var platformDirectives = {
+    model: directive,
+    show: show
+  };
+  
+  
+  
+  var transitionProps = {
+    name: String,
+    appear: Boolean,
+    css: Boolean,
+    mode: String,
+    type: String,
+    enterClass: String,
+    leaveClass: String,
+    enterToClass: String,
+    leaveToClass: String,
+    enterActiveClass: String,
+    leaveActiveClass: String,
+    appearClass: String,
+    appearActiveClass: String,
+    appearToClass: String,
+    duration: [Number, String, Object]
+  };
+  
+  
+  
+  function getRealChild (vnode) {
+    var compOptions = vnode && vnode.componentOptions;
+    if (compOptions && compOptions.Ctor.options.abstract) {
+      return getRealChild(getFirstComponentChild(compOptions.children))
+    } else {
+      return vnode
+    }
+  }
+  
+  function extractTransitionData (comp) {
+    var data = {};
+    var options = comp.$options;
+    
+    for (var key in options.propsData) {
+      data[key] = comp[key];
+    }
+    
+    
+    var listeners = options._parentListeners;
+    for (var key$1 in listeners) {
+      data[camelize(key$1)] = listeners[key$1];
+    }
+    return data
+  }
+  
+  function placeholder (h, rawChild) {
+    if (/\d-keep-alive$/.test(rawChild.tag)) {
+      return h('keep-alive', {
+        props: rawChild.componentOptions.propsData
+      })
+    }
+  }
+  
+  function hasParentTransition (vnode) {
+    while ((vnode = vnode.parent)) {
+      if (vnode.data.transition) {
+        return true
+      }
+    }
+  }
+  
+  function isSameChild (child, oldChild) {
+    return oldChild.key === child.key && oldChild.tag === child.tag
+  }
+  
+  var isNotTextNode = function (c) { return c.tag || isAsyncPlaceholder(c); };
+  
+  var isVShowDirective = function (d) { return d.name === 'show'; };
+  
+  var Transition = {
+    name: 'transition',
+    props: transitionProps,
+    abstract: true,
+    
+    render: function render (h) {
+      var this$1 = this;
+      
+      var children = this.$slots.default;
+      if (!children) {
+        return
+      }
+      
+      
+      children = children.filter(isNotTextNode);
+      
+      if (!children.length) {
+        return
+      }
+      
+      
+      if (children.length > 1) {
+        warn(
+          '<transition> can only be used on a single element. Use ' +
+          '<transition-group> for lists.',
+          this.$parent
+        );
+      }
+      
+      var mode = this.mode;
+      
+      
+      if (mode && mode !== 'in-out' && mode !== 'out-in'
+      ) {
+        warn(
+          'invalid <transition> mode: ' + mode,
+          this.$parent
+        );
+      }
+      
+      var rawChild = children[0];
+      
+      
+      
+      if (hasParentTransition(this.$vnode)) {
+        return rawChild
+      }
+      
+      
+      
+      var child = getRealChild(rawChild);
+      
+      if (!child) {
+        return rawChild
+      }
+      
+      if (this._leaving) {
+        return placeholder(h, rawChild)
+      }
+      
+      
+      
+      
+      var id = "__transition-" + (this._uid) + "-";
+      child.key = child.key == null
+        ? child.isComment
+          ? id + 'comment'
+          : id + child.tag
+        : isPrimitive(child.key)
+          ? (String(child.key).indexOf(id) === 0 ? child.key : id + child.key)
+          : child.key;
+      
+      var data = (child.data || (child.data =  {})).transition = extractTransitionData(this);
+      var oldRawChild = this._vnode;
+      var oldChild = getRealChild(oldRawChild);
+      
+      
+      
+      if (child.data.directives && child.data.directives.some(isVShowDirective)) {
+        child.data.show = true;
+      }
+      
+      if (
+        oldChild &&
+        oldChild.data &&
+        !isSameChild(child, oldChild) &&
+        !isAsyncPlaceholder(oldChild) &&
+        
+        !(oldChild.componentInstance && oldChild.componentInstance._vnode.isComment)
+      ) {
+      
+      
+        var oldData = oldChild.data.transition = extend({}, data);
+      
+        if (mode === 'out-in') {
+      
+          this._leaving = true;
+          mergeVNodeHook(oldData, 'afterLeave', function () {
+            this$1._leaving = false;
+            this$1.$forceUpdate();
+          });
+          return placeholder(h, rawChild)
+        } else if (mode === 'in-out') {
+          if (isAsyncPlaceholder(child)) {
+            return oldRawChild
+          }
+          var delayedLeave;
+          var performLeave = function () { delayedLeave(); };
+          mergeVNodeHook(data, 'afterEnter', performLeave);
+          mergeVNodeHook(data, 'enterCancelled', performLeave);
+          mergeVNodeHook(oldData, 'delayLeave', function (leave) { delayedLeave = leave; });
+        }
+      }
+      
+      return rawChild
+    }
+  };
+  
+  
+  
+  var props = extend({
+    tag: String,
+    moveClass: String
+  }, transitionProps);
+  
+  delete props.mode;
+  
+  var TransitionGroup = {
+    props: props,
+    
+    beforeMount: function beforeMount () {
+      var this$1 = this;
+      
+      var update = this._update;
+      this._update = function (vnode, hydrating) {
+        var restoreActiveInstance = setActiveInstance(this$1);
+        
+        this$1.__patch__(
+          this$1._vnode,
+          this$1.kept,
+          false, // hydrating
+          true // removeOnly (!important, avoids unnecessary moves)
+        );
+        this$1._vnode = this$1.kept;
+        restoreActiveInstance();
+        update.call(this$1, vnode, hydrating);
+      };
+    },
+    
+    render: function render (h) {
+      var tag = this.tag || this.$vnode.data.tag || 'span';
+      var map = Object.create(null);
+      var prevChildren = this.prevChildren = this.children;
+      var rawChildren = this.$slots.default || [];
+      var children = this.children = [];
+      var transitionData = extractTransitionData(this);
+      
+      for (var i = 0; i < rawChildren.length; i++) {
+        var c = rawChildren[i];
+        if (c.tag) {
+          if (c.key != null && String(c.key).indexOf('__vlist') !== 0) {
+            children.push(c);
+            map[c.key] = c
+            ;(c.data || (c.data = {})).transition = transitionData;
+          } else {
+            var opts = c.componentOptions;
+            var name = opts ? (opts.Ctor.options.name || opts.tag || '') : c.tag;
+            warn(("<transition-group> children must be keyed: <" + name + ">"));
+          }
+        }
+      }
+      
+      if (prevChildren) {
+        var kept = [];
+        var removed = [];
+        for (var i$1 = 0; i$1 < prevChildren.length; i$1++) {
+          var c$1 = prevChildren[i$1];
+          c$1.data.transition = transitionData;
+          c$1.data.pos = c$1.elm.getBoundingClientRect();
+          if (map[c$1.key]) {
+            kept.push(c$1);
+          } else {
+            removed.push(c$1);
+          }
+        }
+        this.kept = h(tag, null, kept);
+        this.removed = removed;
+      }
+      
+      return h(tag, null, children)
+    },
+    
+    updated: function updated () {
+      var children = this.prevChildren;
+      var moveClass = this.moveClass || ((this.name || 'v') + '-move');
+      if (!children.length || !this.hasMove(children[0].elm, moveClass)) {
+        return
+      }
+      
+      
+      
+      children.forEach(callPendingCbs);
+      children.forEach(recordPosition);
+      children.forEach(applyTranslation);
+      
+      
+      
+      
+      this._reflow = document.body.offsetHeight;
+      
+      children.forEach(function (c) {
+        if (c.data.moved) {
+          var el = c.elm;
+          var s = el.style;
+          addTransitionClass(el, moveClass);
+          s.transform = s.WebkitTransform = s.transitionDuration = '';
+          el.addEventListener(transitionEndEvent, el._moveCb = function cb (e) {
+            if (e && e.target !== el) {
+              return
+            }
+            if (!e || /transform$/.test(e.propertyName)) {
+              el.removeEventListener(transitionEndEvent, cb);
+              el._moveCb = null;
+              removeTransitionClass(el, moveClass);
+            }
+          });
+        }
+      });
+    },
+    
+    methods: {
+      hasMove: function hasMove (el, moveClass) {
+        
+        if (!hasTransition) {
+          return false
+        }
+        
+        if (this._hasMove) {
+          return this._hasMove
+        }
+        
+        
+        
+        
+        
+        var clone = el.cloneNode();
+        if (el._transitionClasses) {
+          el._transitionClasses.forEach(function (cls) { removeClass(clone, cls); });
+        }
+        addClass(clone, moveClass);
+        clone.style.display = 'none';
+        this.$el.appendChild(clone);
+        var info = getTransitionInfo(clone);
+        this.$el.removeChild(clone);
+        return (this._hasMove = info.hasTransform)
+      }
+    }
+  };
+        
