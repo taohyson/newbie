@@ -8664,4 +8664,236 @@
       }
     }
   };
+  
+  function callPendingCbs (c) {
+    
+    if (c.elm._moveCb) {
+      c.elm._moveCb();
+    }
+    
+    if (c.elm._enterCb) {
+      c.elm._enterCb();
+    }
+  }
+  
+  function recordPosition (c) {
+    c.data.newPos = c.elm.getBoundingClientRect();
+  }
+  
+  function applyTranslation (c) {
+    var oldPos = c.data.pos;
+    var newPos = c.data.newPos;
+    var dx = oldPos.left - newPos.left;
+    var dy = oldPos.top - newPos.top;
+    if (dx || dy) {
+      c.data.moved = true;
+      var s = c.elm.style;
+      s.transform = s.WebkitTransform = "translate(" + dx + "px," + dy + "px)";
+      s.transitionDuration = '0s';
+    }
+  }
+  
+  var platformComponents = {
+    Transition: Transition,
+    TransitionGroup: TransitionGroup
+  };
+  
+  
+  
+  
+  Vue.config.mustUseProp = mustUseProp;
+  Vue.config.isReservedTag = isReservedTag;
+  Vue.config.isReservedAttr = isReservedAttr;
+  Vue.config.getTagNamespace = getTagNamespace;
+  Vue.config.isUnknownElement = isUnknownElement;
+  
+  
+  extend(Vue.options.directives, platformDirectives);
+  extend(Vue.options.components, platformComponents);
+  
+  
+  Vue.prototype.__patch__ = inBrowser ? patch : noop;
+  
+  
+  Vue.prototype.$mount = function (
+    el,
+    hydrating
+  ) {
+    el = el && inBrowser ? query(el) : undefined;
+    return mountComponent(this, el, hydrating)
+  };
+  
+  
+  
+  if (inBrowser) {
+    setTimeout(function () {
+      if (config.devtools) {
+        if (devtools) {
+          devtools.emit('init', Vue);
+        } else {
+          console[console.info ? 'info' : 'log'](
+            'Download the Vue Devtools extension for a better development experience:\n' +
+            'https://github.com/vuejs/vue-devtools'
+          );
+        }
+      }
+      if (config.productionTip !== false &&
+        typeof console !== 'undefined'
+      ) {
+        console[console.info ? 'info' : 'log'](
+          "You are running Vue in development mode.\n" +
+          "Make sure to turn on production mode when deploying for production.\n" +
+          "See more tips at https://vuejs.org/guide/deployment.html"
+        );
+      }
+    }, 0);
+  }
+  
+  
+  
+  var defaultTagRE = /\{\{((?:.|\r?\n)+?)\}\}/g;
+  var regexEscapeRE = /[-.*+?^${}()|[\]\/\\]/g;
+  
+  var buildRegex = cached(function (delimiters) {
+    var open = delimiters[0].replace(regexEscapeRE, '\\$&');
+    var close = delimiters[1].replace(regexEscapeRE, '\\$&');
+    return new RegExp(open + '((?:.|\\n)+?)' + close, 'g')
+  });
+  
+  
+  
+  function parseText (
+    text,
+    delimiters
+  ) {
+    var tagRE = delimiters ? buildRegex(delimiters) : defaultTagRE;
+    if (!tagRE.test(text)) {
+      return
+    }
+    var tokens = [];
+    var rawTokens = [];
+    var lastIndex = tagRE.lastIndex = 0;
+    var match, index, tokenValue;
+    while ((match = tagRE.exec(text))) {
+      index = match.index;
+      
+      if (index > lastIndex) {
+        rawTokens.push(tokenValue = text.slice(lastIndex, index));
+        tokens.push(JSON.stringify(tokenValue));
+      }
+      
+      var exp = parseFilters(match[1].trim());
+      tokens.push(("_s(" + exp + ")"));
+      rawTokens.push({ '@binding': exp });
+      lastIndex = index + match[0].length;
+    }
+    if (lastIndex < text.length) {
+      rawTokens.push(tokenValue = text.slice(lastIndex));
+      tokens.push(JSON.stringify(tokenValue));
+    }
+    return {
+      expression: tokens.join('+'),
+      tokens: rawTokens
+    }
+  }
+  
+  
+  
+  function transformNode (el, options) {
+    var warn = options.warn || baseWarn;
+    var staticClass = getAndRemoveAttr(el, 'class');
+    if (staticClass) {
+      var res = parseText(staticClass, options.delimiters);
+      if (res) {
+        warn(
+          "class=\"" + staticClass + "\": " +
+          'Interpolation inside attributes has been removed. ' +
+          'Use v-bind or the colon shorthand instead. For example, ' +
+          'instead of <div class="{{ val }}">, use <div :class="val">.',
+          el.rawAttrsMap['class']
+        );
+      }
+    }
+    if (staticClass) {
+      el.staticClass = JSON.stringify(staticClass);
+    }
+    var classBinding = getBindingAttr(el, 'class', false /* getStatic */);
+    if (classBinding) {
+      el.classBinding = classBinding;
+    }
+  }
+  
+  function genData (el) {
+    var data = '';
+    if (el.staticClass) {
+      data += "staticClass:" + (el.staticClass) + ",";
+    }
+    if (el.classBinding) {
+      data += "class:" + (el.classBinding) + ",";
+    }
+    return data
+  }
+  
+  var klass$1 = {
+    staticKeys: ['staticClass'],
+    transformNode: transformNode,
+    genData: genData
+  };
+  
+  
+  
+  function transformNode$1 (el, options) {
+    var warn = options.warn || baseWarn;
+    var staticStyle = getAndRemoveAttr(el, 'style');
+    if (staticStyle) {
+    
+      {
+        var res = parseText(staticStyle, options.delimiters);
+        if (res) {
+          warn(
+            "style=\"" + staticStyle + "\": " +
+            'Interpolation inside attributes has been removed. ' +
+            'Use v-bind or the colon shorthand instead. For example, ' +
+            'instead of <div style="{{ val }}">, use <div :style="val">.',
+            el.rawAttrsMap['style']
+          );
+        }
+      }
+      el.staticStyle = JSON.stringify(parseStyleText(staticStyle));
+    }
+    
+    var styleBinding = getBindingAttr(el, 'style', false /* getStatic */);
+    if (styleBinding) {
+      el.styleBinding = styleBinding;
+    }
+  }
+  
+  function genData$1 (el) {
+    var data = '';
+    if (el.staticStyle) {
+      data += "staticStyle:" + (el.staticStyle) + ",";
+    }
+    if (el.styleBinding) {
+      data += "style:(" + (el.styleBinding) + "),";
+    }
+    return data
+  }
+  
+  var style$1 = {
+    staticKeys: ['staticStyle'],
+    transformNode: transformNode$1,
+    genData: genData$1
+  };
+  
+  
+  
+  var decoder;
+  
+  var he = {
+    decode: function decode (html) {
+      decoder = decoder || document.createElement('div');
+      decoder.innerHTML = html;
+      return decoder.textContent
+    }
+  };
         
