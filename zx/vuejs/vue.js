@@ -9212,4 +9212,132 @@
       }
     }
   }
-                                  
+  
+  
+  
+  var onRE = /^@|^v-on:/;
+  var dirRE = /^v-|^@|^:|^\./;
+  var forAliasRE = /([\s\S]*?)\s+(?:in|of)\s+([\s\S]*)/;
+  var forIteratorRE = /,([^,\}\]]*)(?:,([^,\}\]]*))?$/;
+  var stripParensRE = /^\(|\)$/g;
+  
+  var argRE = /:(.*)$/;
+  var bindRE = /^:|^\.|^v-bind:/;
+  var propBindRE = /^\./;
+  var modifierRE = /\.[^.]+/g;
+  
+  var lineBreakRE = /[\r\n]/;
+  var whitespaceRE$1 = /\s+/g;
+  
+  var decodeHTMLCached = cached(he.decode);
+  
+  
+  var warn$2;
+  var delimiters;
+  var transforms;
+  var preTransforms;
+  var postTransforms;
+  var platformIsPreTag;
+  var platformMustUseProp;
+  var platformGetTagNamespace;
+  
+  function createASTElement (
+    tag,
+    attrs,
+    parent
+  ) {
+    return {
+      type: 1,
+      tag: tag,
+      attrsList: attrs,
+      attrsMap: makeAttrsMap(attrs),
+      rawAttrsMap: {},
+      parent: parent,
+      children: []
+    }
+  }
+  
+  
+  
+  
+  function parse (
+    template,
+    options
+  ) {
+    warn$2 = options.warn || baseWarn;
+    
+    platformIsPreTag = options.isPreTag || no;
+    platformMustUseProp = options.mustUseProp || no;
+    platformGetTagNamespace = options.getTagNamespace || no;
+    var isReservedTag = options.isReservedTag || no;
+    
+    transforms = pluckModuleFunction(options.modules, 'transformNode');
+    preTransforms = pluckModuleFunction(options.modules, 'preTransformNode');
+    postTransforms = pluckModuleFunction(options.modules, 'postTransformNode');
+    
+    delimiters = options.delimiters;
+    
+    var stack = [];
+    var preserveWhitespace = options.preserveWhitespace !== false;
+    var whitespaceOption = options.whitespace;
+    var root;
+    var currentParent;
+    var inVPre = false;
+    var inPre = false;
+    var warned = false;
+    
+    function warnOnce (msg, range) {
+      if (!warned) {
+        warned = true;
+        warn$2(msg, range);
+      }
+    }
+    
+    function closeElement (element) {
+      if (!inVPre && !element.processed) {
+        element = processElement(element, options);
+      }
+      
+      if (!stack.length && element !== root) {
+        
+        if (root.if && (element.elseif || element.else)) {
+          {
+            checkRootConstraints(element);
+          }
+          addIfCondition(root, {
+            exp: element.elseif,
+            block: element
+          });
+        } else {
+          warnOnce(
+            "Component template should contain exactly one root element. " +
+            "If you are using v-if on multiple elements, " +
+            "use v-else-if to chain them instead.",
+            { start: element.start }
+          );
+        }
+      }
+      if (currentParent && !element.forbidden) {
+        if (element.elseif || element.else) {
+          processIfConditions(element, currentParent);
+        } else if (element.slotScope) { // scoped slot
+          var name = element.slotTarget || '"default"'
+          ;(currentParent.scopedSlots || (currentParent.scopedSlots = {}))[name] = element;
+        } else {
+          currentParent.children.push(element);
+          element.parent = currentParent;
+        }
+      }
+      
+      if (element.pre) {
+        inVPre = false;
+      }
+      if (platformIsPreTag(element.tag)) {
+        inPre = false;
+      }
+      
+      for (var i = 0; i < postTransforms.length; i++) {
+        postTransforms[i](element, options);
+      }
+    }
+                    
