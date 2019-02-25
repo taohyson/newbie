@@ -9340,4 +9340,164 @@
         postTransforms[i](element, options);
       }
     }
-                    
+
+    function checkRootConstraints (el) {
+      if (el.tag === 'slot' || el.tag === 'template') {
+        warnOnce(
+          "Cannot use <" + (el.tag) + "> as component root element because it may " +
+          'contain multiple nodes.',
+          { start: el.start }
+        );
+      }
+      if (el.attrsMap.hasOwnProperty('v-for')) {
+        warnOnce(
+          'Cannot use v-for on stateful component root element because ' +
+          'it renders multiple elements.',
+          el.rawAttrsMap['v-for']
+        );
+      }
+    }
+    
+    parseHTML(template, {
+      warn: warn$2,
+      expectHTML: options.expectHTML,
+      isUnaryTag: options.isUnaryTag,
+      canBeLeftOpenTag: options.canBeLeftOpenTag,
+      shouldDecodeNewlines: options.shouldDecodeNewlines,
+      shouldDecodeNewlinesForHref: options.shouldDecodeNewlinesForHref,
+      shouldKeepComment: options.comments,
+      outputSourceRange: options.outputSourceRange,
+      start: function start (tag, attrs, unary, start$1) {
+        
+        
+        var ns = (currentParent && currentParent.ns) || platformGetTagNamespace(tag);
+        
+        
+        
+        if (isIE && ns === 'svg') {
+          attrs = guardIESVGBug(attrs);
+        }
+        
+        var element = createASTElement(tag, attrs, currentParent);
+        if (ns) {
+          element.ns = ns;
+        }
+        
+        if (options.outputSourceRange) {
+          element.start = start$1;
+          element.rawAttrsMap = element.attrsList.reduce(function (cumulated, attr) {
+            cumulated[attr.name] = attr;
+            return cumulated
+          }, {});
+        }
+        
+        if (isForbiddenTag(element) && !isServerRendering()) {
+          element.forbidden = true;
+          warn$2(
+            'Templates should only be responsible for mapping the state to the ' +
+            'UI. Avoid placing tags with side-effects in your templates, such as ' +
+            "<" + tag + ">" + ', as they will not be parsed.',
+            { start: element.start }
+          );
+        }
+        
+        
+        for (var i = 0; i < preTransforms.length; i++) {
+          element = preTransforms[i](element, options) || element;
+        }
+        
+        if (!inVPre) {
+          processPre(element);
+          if (element.pre) {
+            inVPre = true;
+          }
+        }
+        if (platformIsPreTag(element.tag)) {
+          inPre = true;
+        }
+        if (inVPre) {
+          processRawAttrs(element);
+        } else if (!element.processed) {
+          
+          processFor(element);
+          processIf(element);
+          processOnce(element);
+        }
+        
+        if (!root) {
+          root = element;
+          {
+            checkRootConstraints(root);
+          }
+        }
+        
+        if (!unary) {
+          currentParent = element;
+          stack.push(element);
+        } else {
+          closeElement(element);
+        }
+      },
+      
+      end: function end (tag, start, end$1) {
+        var element = stack[stack.length - 1];
+        if (!inPre) {
+          
+          var lastNode = element.children[element.children.length - 1];
+          if (lastNode && lastNode.type === 3 && lastNode.text === ' ') {
+            element.children.pop();
+          }
+        }
+        
+        stack.length -= 1;
+        currentParent = stack[stack.length - 1];
+        if (options.outputSourceRange) {
+          element.end = end$1;
+        }
+        closeElement(element);
+      },
+      
+      chars: function chars (text, start, end) {
+        if (!currentParent) {
+          {
+            if (text === template) {
+              warnOnce(
+                'Component template requires a root element, rather than just text.',
+                { start: start }
+              );
+            } else if ((text = text.trim())) {
+              warnOnce(
+                ("text \"" + text + "\" outside root element will be ignored."),
+                { start: start }
+              );
+            }
+          }
+          return
+        }
+        
+        
+        if (isIE &&
+          currentParent.tag === 'textarea' &&
+          currentParent.attrsMap.placeholder === text
+        ) {
+          return
+        }
+        var children = currentParent.children;
+        if (inPre || text.trim()) {
+          text = isTextTag(currentParent) ? text : decodeHTMLCached(text);
+        } else if (!children.length) {
+          
+          text = '';
+        } else if (whitespaceOption) {
+          if (whitespaceOption === 'condense') {
+            
+            
+            text = lineBreakRE.test(text) ? '' : ' ';
+          } else {
+            text = ' ';
+          }
+        } else {
+          text = preserveWhitespace ? ' ' : '';
+        }
+        if (text) {
+          if (whitespaceOption                                                                                  
