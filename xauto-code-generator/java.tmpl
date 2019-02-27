@@ -1,0 +1,22 @@
+'''
+@Component
+public class <Macro>className</Macro> extends SimpleChannelInboundHandler<Object> {
+    private static Logger logger = LogManager.getLogger();
+    
+    private String <Macro>uriPrefix</Macro>;
+
+    public static <MacroFunc>type<MacroCtx>dict</MacroCtx></MacroFunc> get<MacroFunc>name.capitalize()<MacroCtx>dict</MacroCtx></MacroFunc>{
+        String ret = "";
+        ret += <MacroFunc>description<MacroCtx>dict</MacroCtx></MacroFunc>;
+        return ret;
+    }
+
+    <MacroRepeat>len(array),
+    public static <MacroFunc>type<MacroCtx>array[0]</MacroCtx></MacroFunc> get<MacroFunc>name.capitalize()<MacroCtx>array[0]</MacroCtx></MacroFunc>{
+        String ret = "";
+        ret += <MacroFunc>name<MacroCtx>array[0]</MacroCtx></MacroFunc>;
+        return ret;
+    }
+    </MacroRepeat>
+}
+'''
