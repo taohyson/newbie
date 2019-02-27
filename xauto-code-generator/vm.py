@@ -1,49 +1,56 @@
 import re
 import json
-# from rules import root
 
-def repeat(context, template):
+def precompile(context, template):
 	groups = template.split("<MacroRepeat>")
 	for i in range(len(groups)):
 		group = groups[i]
-		tmpls = group.split("</MacroRepeat>")
-		if tmpls[0][:4] != "len(":
-			continue
+		samples = group.split("</MacroRepeat>")
+		sample = samples[0]
+		if sample[:4] == "len(":
+			sampleSet = repeat(context, sample)
+			if sampleSet:
+				template = template.replace(sample, sampleSet)
+			else:
+				continue
 		else:
-			newtmpls = duplicate(context, tmpls[0])
-			template = template.replace(tmpls[0], newtmpls)
+			continue
 	return template
 
-def duplicate(ctx, tmpl):
+def repeat(ctx, tmpl):
 	match = re.search(r'len\(.*', tmpl)
 	if match:
 		length = len(match.group(0))
 		lenstr = tmpl[0:length - 1]
 		size = eval(lenstr, {}, ctx)
 		return copies(size, tmpl[length:])
-	
+	else:
+		return
+
 def copies(size, tmpl):
-	tmpls = ''
+	tmplSet = ''
 	for i in range(size):
-		tmpls += tmpl.replace('[0]', '[' + str(i) + ']')
-	return tmpls
+		tmplSet += tmpl.replace('[0]', '[' + str(i) + ']')
+	return tmplSet
 
-def generate(context, template):
-	template = template.replace('<MacroRepeat>', '');
-	template = template.replace('</MacroRepeat>', '');
+def compile(context, template):
+	templated = template.replace('<MacroRepeat>', '');
+	templated = templated.replace('</MacroRepeat>', '');
 
-	template = template.replace('<Macro>', '\'\'\' + ')
-	template = template.replace('</Macro>', ' + \'\'\'')
+	templated = templated.replace('<Macro>', '\'\'\' + ')
+	templated = templated.replace('</Macro>', ' + \'\'\'')
 
-	template = template.replace('<MacroFunc>', '\'\'\' + eval(\'')
-	template = template.replace('<MacroCtx>', '\', {}, ');
-	template = template.replace('</MacroCtx>', '');
-	template = template.replace('</MacroFunc>', ') + \'\'\'')
-	return eval(template, {}, context)
+	templated = templated.replace('<MacroFunc>', '\'\'\' + eval(\'')
+	templated = templated.replace('<MacroCtx>', '\', {}, ');
+	templated = templated.replace('</MacroCtx>', '');
+	templated = templated.replace('</MacroFunc>', ') + \'\'\'')
+	return eval(templated, {}, context)
 
-root = json.loads(open('rules.json', 'r', encoding='UTF-8').read())
-template = open('java.tmpl', 'r', encoding='UTF-8').read()
-template = repeat(root, template)
-res = generate(root, template)
-if res:
-	print(res)
+def generate(ruleFile, templateFile):
+	rules = json.loads(open(ruleFile, 'r', encoding='UTF-8').read())
+	template = open(templateFile, 'r', encoding='UTF-8').read()
+	templated = precompile(rules, template)
+	return compile(rules, templated)
+
+if __name__ == '__main__':
+	print(generate('rules.json', 'java.tmpl'))
