@@ -13,18 +13,19 @@ def generate(ruleFile):
 			for item in templates: 
 				template = open('config\\templates\\' + language +'\\' + item.get("template"), 'r', encoding='UTF-8').read()
 				context.update(item.get("context"))
-				exec(template, {"xif": util.xif, "xfor": util.xfor, "xoutput": util.xoutput}, context)
+				print(ruleFile)
+				print(item.get("template"))
+				exec(template, util.__dict__, context)
 	return
 
 def walk():
 	for fpath,dirs,fs in os.walk('config'):
 		for f in fs:
 			if f[-3:] == ".py":
-				# print(f[:-3])
 				generate('config.' + f[:-3])
 		break
 	return
 
 if __name__ == '__main__':
-	# generate('user')
+	# generate('config.user')
 	walk()

@@ -10,7 +10,11 @@ import kit.common.TypeConvert;
 import org.hibernate.validator.constraints.*;
 import javax.validation.constraints.*;
 import kit.common.CombineKeysUtil;
-
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+'''+xfor(depends, lambda item:''' 
+import '''+item+'''.*;
+''')+'''
 
 /**
 * 实体类 Project
@@ -30,6 +34,11 @@ public class '''+className+''' implements Serializable{
 		this.'''+item["field"] +''' = '''+item["field"] +''';
 	}
 	''')+'''
+
+	@Override
+	public String toString() {
+		return new Gson().toJson(this).toString();
+	}
 }
 '''
 

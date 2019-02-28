@@ -1,5 +1,11 @@
 import os
 
+def xpascal(identifier):
+	return identifier[0].upper() + identifier[1:]
+
+def xcamel(identifier):
+	return identifier[0].lower() + identifier[1:]
+
 def xif(item, tempCtrl):
     if item:
     	return tempCtrl(item)
