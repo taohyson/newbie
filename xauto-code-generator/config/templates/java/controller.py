@@ -124,7 +124,7 @@ public class '''+className+'''Controller extends BaseController
 	public Map<String,Object> queryListByPageFully(@RequestBody Map<String,Object> selectParam, HttpServletRequest request) throws TokenException {
 		try {
 			String userId = request.getHeader("userId");
-			PageMyBatis<Project> pageMyBatis = '''+xcamel(className)+'''Service.search(userId, selectParam);
+			List<'''+className+'''> pageMyBatis = '''+xcamel(className)+'''Service.search(userId, selectParam);
 			return data(pageMyBatis);
 		} catch(Exception e) {
 			logger.error(new Gson().toJson(this).toString());
@@ -141,7 +141,7 @@ public class '''+className+'''Controller extends BaseController
 		PagingCriteria pagingCriteria = fillPagingCriteria(queryParam.pageNum,queryParam.numPerPage,queryParam.searchKeywords,queryParam.orderField,queryParam.orderDirection);
 		try {
 			String userId = request.getHeader("userId");
-			PageMyBatis<Project> pageMyBatis = '''+xcamel(className)+'''Service.search(userId, pagingCriteria);
+			PageMyBatis<'''+className+'''> pageMyBatis = '''+xcamel(className)+'''Service.search(userId, pagingCriteria);
 			return data(pageMyBatis);
 		} catch(Exception e) {
 			logger.error(new Gson().toJson(this).toString());

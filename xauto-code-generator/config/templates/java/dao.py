@@ -27,7 +27,7 @@ public interface '''+className+'''Dao {
 	public int deleteRange(String [] ids);
 	public int update('''+className+''' '''+className+''');
 	public '''+className+''' query(@Param(value="id") String id);
-	public PageMyBatis<'''+className+'''> select(@Param(value="userId") String userId, Map<String,Object> params);
+	public List<'''+className+'''> select(@Param(value="userId") String userId, Map<String,Object> params);
 	public PageMyBatis<'''+className+'''> search(@Param(value="userId") String userId, PagingCriteria pagingCriteria);
 	public int count(Map<String,Object> params);
 	public int countRange(Map<String,Object> params);

@@ -53,13 +53,18 @@ contexts = {
 					"path": "src/main/java/com/autoai/app/service/"
 				}
 			},
-			# {
-			# 	"template": "serviceImp.py",
-			# 	"context": {
-			# 		"package": "com.autoai.app.service.iml",
-			# 		"path": "src/main/java/com/autoai/app/service/imp/"
-			# 	}
-			# }
+			{
+				"template": "serviceImpl.py",
+				"context": {
+					"package": "com.autoai.app.service.impl",
+					"depends": [
+						"com.autoai.app.bean",
+						"com.autoai.app.service",
+						"com.autoai.app.dao",
+					],
+					"path": "src/main/java/com/autoai/app/service/impl/"
+				}
+			}
 		]
 	},
 	"mysql": {
