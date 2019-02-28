@@ -36,7 +36,7 @@ contexts = {
 				"context": {
 					"package": "com.autoai.app.controller",
 					"depends": [
-						"com.autoai.app.bean"
+						"com.autoai.app.bean",
 						"com.autoai.app.service"
 					],
 					"uri": "api/",
