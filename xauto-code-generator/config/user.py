@@ -68,22 +68,58 @@ contexts = {
 		]
 	},
 	"mysql": {
+		"className": "User",
 		"table": "t_user",
 		"columns": [
 			{
-				"type": "String",
-				"column": "id"
+				"column": "id",
+				"type": "bigint(20) NOT NULL",
+				"field": "id"
 			},
 			{
-				"type": "int",
-				"column": "name"
+				"column": "name",
+				"type": "varchar(255) DEFAULT NULL",
+				"field": "name"
+			},
+			{
+				"column": "age",
+				"type": "nt(11) DEFAULT NULL",
+				"field": "age"
+			}
+		],
+		"primary-key": [
+			"id"
+		],
+		"references": [
+			{
+				"table": "t_order",
+				"ons":[
+					{
+						"on": "id",
+						"oned": "userId"
+					}
+				],
+				"columns": [
+					{
+						"column": "id",
+						"field": "orderId"
+					},
+					{
+						"column": "name",
+						"field": "orderName"
+					}
+				],
 			}
 		],
 		"templates": [
-			# {
-			# 	"template": "mysql.py",
-			# 	"path": "src/main/resource/com/autoai/app/"
-			# }
+			{
+				"template": "mysql.py",
+				"context": {
+					"package": "com.autoai.app.dao",
+					"beanpackage": "com.autoai.app.bean",
+					"path": "src/main/resource/com/autoai/app/"
+				}
+			}
 		]
 	}
 }
